@@ -1,0 +1,22 @@
+ul.pagination
+  if page.prev
+    li.link
+      a(href=url_for(page.prev_link))
+        i.icon.icon-arror-left
+  li.current
+    if page.current === 1
+      a(style="background-color:#72c0d3", href=url_for('/')) 1
+    else
+      a(href=url_for('/')) 1
+
+  - for (let i = 2; i< Math.ceil(site.posts.length / config.index_generator.per_page) +1; i++) {
+    li.current
+      if page.current === i
+        a(style="background-color:#72c0d3", href=url_for('page/' + (i))) #{i}
+      else
+        a(href=url_for('page/' + (i))) #{i}
+  - }
+  if page.next
+    li.link
+      a(href=url_for(page.next_link))
+        i.icon.icon-arror-right

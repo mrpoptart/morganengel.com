@@ -1,0 +1,36 @@
+# Icon
+favicon: /favicon.ico
+# SEO
+keywords: Morgan Engel, frontend development, people empowerment, Square, Gusto, Spend.money, web development, software engineering, software development, software architecture, software design, software engineering management, software engineering leadership, software engineering mentorship, software engineering coaching, software engineering training, software engineering consulting
+# Header
+page_background: /img/panobg.jpg
+page_menu_button: dark
+post_background: /img/panobg.jpg
+post_menu_button: light
+title_placeholder: Loading...
+author:
+  head: https://0.gravatar.com/avatar/50e569729493e430c19b7caaeb67e86bca2e0834d8db8cc2ea6f6a0d1adeb1b2?size=512
+  signature: Super tall lover of life
+# content
+content_width: 800
+# Footer
+## Social icon list: [facebook, twitter, weibo, wechat, github, stackoverflow, linkin, email, segmentfault, flickr, zhihu, disqus, douban, bilibili]
+social:
+  - name: LinkedIn
+    icon: linkin
+    link: https://linkedin.com/in/morganengel
+  - name: Weibo
+    icon: weibo
+    link: https://weibo.com/heqibang
+  - name: SegmentFault
+    icon: segmentfault
+    link: https://www.segmentfault.com/u/bon
+# Duoshuo
+duoshuo:
+  enable: false
+  siteName: ueibo
+# Copyright
+copyright:
+  record: false
+  hexo: true
+  laughing: true
