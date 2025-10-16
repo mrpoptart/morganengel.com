@@ -1,10 +1,11 @@
 ---
 title: AI is the New UI
 date: 2025-10-16
+photos: /img/ai/chatgpt.png
 author: Morgan
 ---
 
-We've been talking about artificial intelligence and LLMs a lot at work lately. As we are being pushed to become more and more fluent in AI, one of the things that we've been trying to figure out is when to invest and how do we know if a product is worthy or worth being part of some LLM. 
+We've been talking about artificial intelligence and LLMs a lot at work lately. As we are being pushed to become more and more fluent in AI<!-- more -->, one of the things that we've been trying to figure out is when to invest and how do we know if a product is worthy or worth being part of some LLM. 
 
 At work, we have a general LLM that handles all interactions with our customers named Gus. And Gus has MCP servers and tooling and evals, etc. that allow it to connect to many different places and many different features at the company. As Gus becomes better at doing the work that it's doing, it is more and more useful. Adding utility to an already useful tool becomes a priority. As my team builds new functionality, how do we know which functionality becomes part of the AI system? 
 
