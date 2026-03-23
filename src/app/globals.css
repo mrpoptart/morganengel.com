@@ -1,0 +1,94 @@
+@import "tailwindcss";
+@plugin "daisyui";
+@plugin "@tailwindcss/typography";
+@plugin "tailwindcss-animate";
+
+@theme inline {
+  --font-sans: "Inter", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+}
+
+/* DaisyUI Dracula theme with Tokyo Night base override */
+[data-theme="dracula"] {
+  --b1: oklch(from #1a1b26 l c h);
+}
+
+/* Selection */
+::selection {
+  background: #bd93f9;
+  color: #1a1b26;
+}
+
+/* Custom scrollbar - Webkit */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #44475a;
+  border-radius: 3px;
+}
+
+/* Custom scrollbar - Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #44475a transparent;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out both;
+}
+
+/* Prose customizations */
+.prose-blog {
+  --tw-prose-links: #8be9fd;
+  --tw-prose-headings: #f8f8f2;
+  --tw-prose-bold: #f8f8f2;
+  --tw-prose-code: #ff79c6;
+}
+
+.prose-blog :where(code):not(:where(pre *)) {
+  background: oklch(from #44475a l c h / 0.5);
+  border-radius: 0.25rem;
+  padding: 0.125rem 0.375rem;
+  font-size: 0.875rem;
+  font-family: "JetBrains Mono", monospace;
+}
+
+.prose-blog :where(code):not(:where(pre *))::before,
+.prose-blog :where(code):not(:where(pre *))::after {
+  content: none;
+}
+
+.prose-blog :where(a) {
+  text-decoration: none;
+}
+.prose-blog :where(a):hover {
+  text-decoration: underline;
+}
+
+.prose-blog :where(blockquote) {
+  border-left-color: #bd93f9;
+  background: oklch(from #44475a l c h / 0.15);
+  border-radius: 0 0.75rem 0.75rem 0;
+  padding: 1rem 1.5rem;
+}
+
+.prose-blog :where(h1, h2, h3, h4, h5, h6) {
+  font-family: "JetBrains Mono", monospace;
+  scroll-margin-top: 5rem;
+}
