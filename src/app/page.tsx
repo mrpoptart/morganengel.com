@@ -53,9 +53,6 @@ export default function Home() {
 
       {/* Post grid */}
       <section className="max-w-6xl mx-auto px-6 pb-16">
-        <h2 className="text-sm font-mono uppercase tracking-widest text-base-content/40 mb-8">
-          Recent posts
-        </h2>
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {[0, 1, 2, 3].map((i) => (

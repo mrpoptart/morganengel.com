@@ -8,8 +8,8 @@
   --font-mono: "JetBrains Mono", monospace;
 }
 
-/* DaisyUI Dracula theme with Tokyo Night base override */
-[data-theme="dracula"] {
+/* Override DaisyUI dark theme base with Tokyo Night background */
+[data-theme="dark"] {
   --b1: oklch(from #1a1b26 l c h);
 }
 
@@ -86,6 +86,16 @@
   background: oklch(from #44475a l c h / 0.15);
   border-radius: 0 0.75rem 0.75rem 0;
   padding: 1rem 1.5rem;
+}
+
+.prose-blog :where(li) {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.prose-blog :where(li) :where(p) {
+  margin-top: 0;
+  margin-bottom: 0;
 }
 
 /* Novel/TipTap editor - make editable area fill container */

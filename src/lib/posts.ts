@@ -125,8 +125,6 @@ export async function updatePost(
     if (existing && !existing.publishedAt) {
       updates.publishedAt = Timestamp.now();
     }
-  } else if (data.status === "draft") {
-    updates.publishedAt = null;
   }
 
   await updateDoc(doc(db, "posts", id), updates);
