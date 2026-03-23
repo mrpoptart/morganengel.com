@@ -1,11 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   EditorRoot,
   EditorContent,
-  EditorBubble,
-  EditorBubbleItem,
   useEditor,
   type JSONContent,
 } from "novel";
@@ -34,136 +33,147 @@ const extensions = [
 function ToolbarButton({
   label,
   isActive,
-  onSelect,
+  onClick,
 }: {
   label: React.ReactNode;
   isActive: boolean;
-  onSelect: () => void;
+  onClick: () => void;
 }) {
   return (
-    <EditorBubbleItem onSelect={onSelect}>
-      <button
-        type="button"
-        className={`px-2 py-1 text-sm rounded transition-colors ${
-          isActive
-            ? "bg-primary text-primary-content"
-            : "hover:bg-base-content/10"
-        }`}
-      >
-        {label}
-      </button>
-    </EditorBubbleItem>
+    <button
+      type="button"
+      onMouseDown={(e) => {
+        e.preventDefault();
+        onClick();
+      }}
+      onTouchEnd={(e) => {
+        e.preventDefault();
+        onClick();
+      }}
+      className={`flex items-center justify-center w-9 h-9 text-sm rounded-md transition-colors shrink-0 ${
+        isActive
+          ? "bg-primary text-primary-content"
+          : "text-base-content/70 hover:bg-base-content/10 hover:text-base-content active:bg-base-content/20"
+      }`}
+    >
+      {label}
+    </button>
   );
 }
 
-function BubbleToolbar() {
+function Divider() {
+  return <div className="w-px h-6 bg-base-content/15 shrink-0" />;
+}
+
+function Toolbar({ portalTarget }: { portalTarget: HTMLElement | null }) {
   const { editor } = useEditor();
-  if (!editor) return null;
+  if (!editor || !portalTarget) return null;
 
-  const items = [
-    {
-      label: <strong>B</strong>,
-      active: editor.isActive("bold"),
-      action: () => editor.chain().focus().toggleBold().run(),
-    },
-    {
-      label: <em>I</em>,
-      active: editor.isActive("italic"),
-      action: () => editor.chain().focus().toggleItalic().run(),
-    },
-    {
-      label: <span className="underline">U</span>,
-      active: editor.isActive("underline"),
-      action: () => editor.chain().focus().toggleUnderline().run(),
-    },
-    {
-      label: <s>S</s>,
-      active: editor.isActive("strike"),
-      action: () => editor.chain().focus().toggleStrike().run(),
-    },
-    {
-      label: "</>",
-      active: editor.isActive("code"),
-      action: () => editor.chain().focus().toggleCode().run(),
-    },
-    {
-      label: "H",
-      active: editor.isActive("highlight"),
-      action: () => editor.chain().focus().toggleHighlight().run(),
-    },
-  ];
+  const toolbar = (
+    <div className="flex items-center gap-0.5 overflow-x-auto scrollbar-none px-2 py-1.5">
+      <ToolbarButton
+        label={<strong>B</strong>}
+        isActive={editor.isActive("bold")}
+        onClick={() => editor.chain().focus().toggleBold().run()}
+      />
+      <ToolbarButton
+        label={<em>I</em>}
+        isActive={editor.isActive("italic")}
+        onClick={() => editor.chain().focus().toggleItalic().run()}
+      />
+      <ToolbarButton
+        label={<span className="underline">U</span>}
+        isActive={editor.isActive("underline")}
+        onClick={() => editor.chain().focus().toggleUnderline().run()}
+      />
+      <ToolbarButton
+        label={<s>S</s>}
+        isActive={editor.isActive("strike")}
+        onClick={() => editor.chain().focus().toggleStrike().run()}
+      />
+      <ToolbarButton
+        label="<>"
+        isActive={editor.isActive("code")}
+        onClick={() => editor.chain().focus().toggleCode().run()}
+      />
+      <ToolbarButton
+        label="H"
+        isActive={editor.isActive("highlight")}
+        onClick={() => editor.chain().focus().toggleHighlight().run()}
+      />
 
-  const headings = [
-    {
-      label: "H2",
-      active: editor.isActive("heading", { level: 2 }),
-      action: () => editor.chain().focus().toggleHeading({ level: 2 }).run(),
-    },
-    {
-      label: "H3",
-      active: editor.isActive("heading", { level: 3 }),
-      action: () => editor.chain().focus().toggleHeading({ level: 3 }).run(),
-    },
-  ];
+      <Divider />
 
-  const blocks = [
-    {
-      label: "•",
-      active: editor.isActive("bulletList"),
-      action: () => editor.chain().focus().toggleBulletList().run(),
-    },
-    {
-      label: "1.",
-      active: editor.isActive("orderedList"),
-      action: () => editor.chain().focus().toggleOrderedList().run(),
-    },
-    {
-      label: "🔗",
-      active: editor.isActive("link"),
-      action: () => {
-        const url = window.prompt("Enter URL:");
-        if (url) editor.chain().focus().setLink({ href: url }).run();
-      },
-    },
-  ];
+      <ToolbarButton
+        label="H2"
+        isActive={editor.isActive("heading", { level: 2 })}
+        onClick={() =>
+          editor.chain().focus().toggleHeading({ level: 2 }).run()
+        }
+      />
+      <ToolbarButton
+        label="H3"
+        isActive={editor.isActive("heading", { level: 3 })}
+        onClick={() =>
+          editor.chain().focus().toggleHeading({ level: 3 }).run()
+        }
+      />
 
-  return (
-    <EditorBubble className="flex items-center gap-0.5 rounded-lg border border-base-content/20 bg-base-300 shadow-xl p-1">
-      {items.map((item, i) => (
-        <ToolbarButton
-          key={i}
-          label={item.label}
-          isActive={item.active}
-          onSelect={item.action}
-        />
-      ))}
-      <div className="w-px h-5 bg-base-content/20 mx-0.5" />
-      {headings.map((item, i) => (
-        <ToolbarButton
-          key={`h${i}`}
-          label={item.label}
-          isActive={item.active}
-          onSelect={item.action}
-        />
-      ))}
-      <div className="w-px h-5 bg-base-content/20 mx-0.5" />
-      {blocks.map((item, i) => (
-        <ToolbarButton
-          key={`b${i}`}
-          label={item.label}
-          isActive={item.active}
-          onSelect={item.action}
-        />
-      ))}
-    </EditorBubble>
+      <Divider />
+
+      <ToolbarButton
+        label="&bull;"
+        isActive={editor.isActive("bulletList")}
+        onClick={() => editor.chain().focus().toggleBulletList().run()}
+      />
+      <ToolbarButton
+        label="1."
+        isActive={editor.isActive("orderedList")}
+        onClick={() => editor.chain().focus().toggleOrderedList().run()}
+      />
+      <ToolbarButton
+        label="&ldquo;"
+        isActive={editor.isActive("blockquote")}
+        onClick={() => editor.chain().focus().toggleBlockquote().run()}
+      />
+
+      <Divider />
+
+      <ToolbarButton
+        label="&#128279;"
+        isActive={editor.isActive("link")}
+        onClick={() => {
+          if (editor.isActive("link")) {
+            editor.chain().focus().unsetLink().run();
+            return;
+          }
+          const url = window.prompt("Enter URL:");
+          if (url) editor.chain().focus().setLink({ href: url }).run();
+        }}
+      />
+    </div>
   );
+
+  return createPortal(toolbar, portalTarget);
 }
 
 export function Editor({ initialContent, onUpdate }: EditorProps) {
   const [content] = useState<JSONContent | undefined>(initialContent);
+  const toolbarRef = useRef<HTMLDivElement>(null);
+  const [toolbarTarget, setToolbarTarget] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    setToolbarTarget(toolbarRef.current);
+  }, []);
 
   return (
-    <div className="min-h-[600px] border border-base-content/10 rounded-xl overflow-hidden bg-base-200/30">
+    <div className="min-h-[600px] border border-base-content/10 rounded-xl bg-base-200/30">
+      {/* Toolbar portal target — sticky at top */}
+      <div
+        ref={toolbarRef}
+        className="sticky top-0 z-10 border-b border-base-content/10 bg-base-200/95 backdrop-blur-sm"
+      />
+
       <EditorRoot>
         <EditorContent
           initialContent={content}
@@ -174,7 +184,7 @@ export function Editor({ initialContent, onUpdate }: EditorProps) {
             onUpdate?.(json, editor.getHTML());
           }}
         >
-          <BubbleToolbar />
+          <Toolbar portalTarget={toolbarTarget} />
         </EditorContent>
       </EditorRoot>
     </div>
