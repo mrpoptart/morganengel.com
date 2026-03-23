@@ -75,8 +75,15 @@ export async function createPost(data: {
   content: string;
   tags: string[];
   status: "draft" | "published";
+  publishedAt?: Date;
 }): Promise<string> {
   const now = Timestamp.now();
+  const publishedAt =
+    data.status === "published"
+      ? data.publishedAt
+        ? Timestamp.fromDate(data.publishedAt)
+        : now
+      : null;
   const docRef = await addDoc(postsRef, {
     title: data.title,
     slug: slugify(data.title),
@@ -84,7 +91,7 @@ export async function createPost(data: {
     excerpt: generateExcerpt(data.content),
     tags: data.tags,
     status: data.status,
-    publishedAt: data.status === "published" ? now : null,
+    publishedAt,
     createdAt: now,
     updatedAt: now,
   });
@@ -99,6 +106,7 @@ export async function updatePost(
     tags: string[];
     status: "draft" | "published";
     slug: string;
+    publishedAt: Date;
   }>
 ): Promise<void> {
   const updates: Record<string, unknown> = {
@@ -110,8 +118,9 @@ export async function updatePost(
     updates.excerpt = generateExcerpt(data.content);
   }
 
-  if (data.status === "published") {
-    // Set publishedAt if not already published
+  if (data.publishedAt) {
+    updates.publishedAt = Timestamp.fromDate(data.publishedAt);
+  } else if (data.status === "published") {
     const existing = await getPostById(id);
     if (existing && !existing.publishedAt) {
       updates.publishedAt = Timestamp.now();

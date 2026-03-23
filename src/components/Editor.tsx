@@ -8,6 +8,7 @@ import {
   useEditor,
   type JSONContent,
 } from "novel";
+import { generateJSON } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import Underline from "@tiptap/extension-underline";
@@ -16,6 +17,7 @@ import Placeholder from "@tiptap/extension-placeholder";
 
 interface EditorProps {
   initialContent?: JSONContent;
+  initialHTML?: string;
   onUpdate?: (json: JSONContent, html: string) => void;
 }
 
@@ -157,8 +159,12 @@ function Toolbar({ portalTarget }: { portalTarget: HTMLElement | null }) {
   return createPortal(toolbar, portalTarget);
 }
 
-export function Editor({ initialContent, onUpdate }: EditorProps) {
-  const [content] = useState<JSONContent | undefined>(initialContent);
+export function Editor({ initialContent, initialHTML, onUpdate }: EditorProps) {
+  const [content] = useState<JSONContent | undefined>(() => {
+    if (initialContent) return initialContent;
+    if (initialHTML) return generateJSON(initialHTML, extensions) as JSONContent;
+    return undefined;
+  });
   const toolbarRef = useRef<HTMLDivElement>(null);
   const [toolbarTarget, setToolbarTarget] = useState<HTMLElement | null>(null);
 

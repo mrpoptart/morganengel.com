@@ -5,7 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { getPostById, updatePost, deletePost } from "@/lib/posts";
 import { Editor } from "@/components/Editor";
 import type { Post } from "@/types/post";
-import type { JSONContent } from "novel";
+
 
 export default function EditPostPage() {
   const router = useRouter();
@@ -16,6 +16,7 @@ export default function EditPostPage() {
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
   const [tags, setTags] = useState("");
+  const [publishDate, setPublishDate] = useState("");
   const [editingSlug, setEditingSlug] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -31,13 +32,17 @@ export default function EditPostPage() {
       setTitle(p.title);
       setSlug(p.slug);
       setTags(p.tags.join(", "));
+      if (p.publishedAt) {
+        const d = p.publishedAt.toDate();
+        setPublishDate(d.toISOString().slice(0, 16));
+      }
       htmlRef.current = p.content;
       setLoading(false);
     });
   }, [id, router]);
 
   const handleEditorUpdate = useCallback(
-    (_json: JSONContent, html: string) => {
+    (_json: unknown, html: string) => {
       htmlRef.current = html;
     },
     []
@@ -55,6 +60,7 @@ export default function EditPostPage() {
           .map((t) => t.trim().toLowerCase())
           .filter(Boolean),
         ...(status ? { status } : {}),
+        ...(publishDate ? { publishedAt: new Date(publishDate) } : {}),
       });
       router.push("/admin");
     } catch (error) {
@@ -79,14 +85,6 @@ export default function EditPostPage() {
   }
 
   if (!post) return null;
-
-  // Parse initial content for the editor
-  let initialContent: JSONContent | undefined;
-  if (post.content) {
-    // Novel expects JSONContent; if we stored HTML, we start fresh and let the user re-edit
-    // In production, store JSONContent alongside HTML for lossless round-trips
-    initialContent = undefined;
-  }
 
   return (
     <div className="animate-fade-in-up">
@@ -124,10 +122,20 @@ export default function EditPostPage() {
         placeholder="Tags (comma separated)"
         value={tags}
         onChange={(e) => setTags(e.target.value)}
-        className="input input-ghost text-sm font-mono w-full mb-6 px-0 text-base-content/50 focus:outline-none"
+        className="input input-ghost text-sm font-mono w-full mb-4 px-0 text-base-content/50 focus:outline-none"
       />
 
-      <Editor initialContent={initialContent} onUpdate={handleEditorUpdate} />
+      <div className="flex items-center gap-2 mb-6">
+        <label className="text-xs text-base-content/40 font-mono">Publish date:</label>
+        <input
+          type="datetime-local"
+          value={publishDate}
+          onChange={(e) => setPublishDate(e.target.value)}
+          className="input input-ghost input-sm font-mono text-sm text-base-content/50 focus:outline-none"
+        />
+      </div>
+
+      <Editor initialHTML={post.content} onUpdate={handleEditorUpdate} />
 
       <div className="flex gap-3 mt-6 justify-between">
         <button

@@ -10,6 +10,7 @@ export default function NewPostPage() {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [tags, setTags] = useState("");
+  const [publishDate, setPublishDate] = useState("");
   const [saving, setSaving] = useState(false);
   const htmlRef = useRef("");
 
@@ -32,6 +33,7 @@ export default function NewPostPage() {
           .map((t) => t.trim().toLowerCase())
           .filter(Boolean),
         status,
+        ...(publishDate ? { publishedAt: new Date(publishDate) } : {}),
       });
       router.push("/admin");
     } catch (error) {
@@ -56,8 +58,18 @@ export default function NewPostPage() {
         placeholder="Tags (comma separated)"
         value={tags}
         onChange={(e) => setTags(e.target.value)}
-        className="input input-ghost text-sm font-mono w-full mb-6 px-0 text-base-content/50 focus:outline-none"
+        className="input input-ghost text-sm font-mono w-full mb-4 px-0 text-base-content/50 focus:outline-none"
       />
+
+      <div className="flex items-center gap-2 mb-6">
+        <label className="text-xs text-base-content/40 font-mono">Publish date:</label>
+        <input
+          type="datetime-local"
+          value={publishDate}
+          onChange={(e) => setPublishDate(e.target.value)}
+          className="input input-ghost input-sm font-mono text-sm text-base-content/50 focus:outline-none"
+        />
+      </div>
 
       <Editor onUpdate={handleEditorUpdate} />
 
