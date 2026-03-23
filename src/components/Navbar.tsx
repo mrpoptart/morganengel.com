@@ -14,7 +14,7 @@ export function Navbar() {
   const pathname = usePathname();
 
   return (
-    <div className="navbar sticky top-0 z-50 bg-base-100/80 backdrop-blur-xl border-b border-base-content/5">
+    <div className="navbar bg-base-100/80 backdrop-blur-xl border-b border-base-content/5">
       <div className="max-w-6xl mx-auto px-6 w-full flex items-center justify-between">
         {/* Logo */}
         <Link

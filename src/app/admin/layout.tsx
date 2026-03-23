@@ -28,8 +28,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-8">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-xl font-bold font-mono">Admin</h1>
+      <div className="flex items-center justify-end mb-8">
         <div className="flex items-center gap-4">
           <span className="text-sm text-base-content/50">{user.email}</span>
           <Link href="/admin/new" className="btn btn-primary btn-sm">
