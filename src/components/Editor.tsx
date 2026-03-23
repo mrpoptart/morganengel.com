@@ -11,9 +11,11 @@ import {
 import { generateJSON } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
+import Image from "@tiptap/extension-image";
 import Underline from "@tiptap/extension-underline";
 import Highlight from "@tiptap/extension-highlight";
 import Placeholder from "@tiptap/extension-placeholder";
+import { uploadImage } from "@/lib/upload";
 
 interface EditorProps {
   initialContent?: JSONContent;
@@ -21,11 +23,32 @@ interface EditorProps {
   onUpdate?: (json: JSONContent, html: string) => void;
 }
 
+function handleImageFiles(
+  files: FileList | File[],
+  view: { state: any; dispatch: any },
+  pos: number
+) {
+  for (const file of Array.from(files)) {
+    if (!file.type.startsWith("image/")) continue;
+    uploadImage(file).then((url) => {
+      const node = view.state.schema.nodes.image.create({ src: url });
+      const tr = view.state.tr.insert(pos, node);
+      view.dispatch(tr);
+    });
+    return true;
+  }
+  return false;
+}
+
 const extensions = [
   StarterKit,
   Link.configure({
     openOnClick: false,
     HTMLAttributes: { class: "link link-primary" },
+  }),
+  Image.configure({
+    HTMLAttributes: { class: "rounded-lg max-w-full" },
+    allowBase64: true,
   }),
   Underline,
   Highlight,
@@ -188,6 +211,41 @@ export function Editor({ initialContent, initialHTML, onUpdate }: EditorProps) {
           onUpdate={({ editor }) => {
             const json = editor.getJSON();
             onUpdate?.(json, editor.getHTML());
+          }}
+          editorProps={{
+            handlePaste(view, event) {
+              const items = event.clipboardData?.items;
+              if (!items) return false;
+              const imageFiles: File[] = [];
+              for (const item of items) {
+                if (item.type.startsWith("image/")) {
+                  const file = item.getAsFile();
+                  if (file) imageFiles.push(file);
+                }
+              }
+              if (imageFiles.length === 0) return false;
+              event.preventDefault();
+              return handleImageFiles(
+                imageFiles,
+                view,
+                view.state.selection.from
+              );
+            },
+            handleDrop(view, event) {
+              const files = event.dataTransfer?.files;
+              if (!files?.length) return false;
+              const hasImage = Array.from(files).some((f) =>
+                f.type.startsWith("image/")
+              );
+              if (!hasImage) return false;
+              event.preventDefault();
+              const pos =
+                view.posAtCoords({
+                  left: event.clientX,
+                  top: event.clientY,
+                })?.pos ?? view.state.selection.from;
+              return handleImageFiles(Array.from(files), view, pos);
+            },
           }}
         >
           <Toolbar portalTarget={toolbarTarget} />
