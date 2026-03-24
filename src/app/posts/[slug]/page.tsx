@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { getPostBySlug } from "@/lib/posts";
+import { useAuth } from "@/components/AuthProvider";
 import type { Post } from "@/types/post";
 
 function formatDate(post: Post): string {
@@ -25,6 +26,7 @@ function readingTime(html: string): string {
 export default function PostPage() {
   const params = useParams();
   const slug = params.slug as string;
+  const { isAdmin } = useAuth();
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -93,6 +95,17 @@ export default function PostPage() {
             </Link>
           ))}
         </div>
+        {isAdmin && (
+          <>
+            <span>&middot;</span>
+            <Link
+              href={`/admin/edit/${slug}`}
+              className="hover:text-primary transition-colors"
+            >
+              Edit
+            </Link>
+          </>
+        )}
       </div>
 
       <div className="divider mt-8" />

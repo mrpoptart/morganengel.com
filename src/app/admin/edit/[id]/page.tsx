@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { getPostById, updatePost, deletePost } from "@/lib/posts";
+import { getPostById, getPostBySlug, updatePost, deletePost } from "@/lib/posts";
 import { Editor } from "@/components/Editor";
 import { TagsInput } from "@/components/TagsInput";
 import type { Post } from "@/types/post";
@@ -11,8 +11,9 @@ import type { Post } from "@/types/post";
 export default function EditPostPage() {
   const router = useRouter();
   const params = useParams();
-  const id = params.id as string;
+  const idOrSlug = params.id as string;
 
+  const [postId, setPostId] = useState<string | null>(null);
   const [post, setPost] = useState<Post | null>(null);
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
@@ -24,11 +25,16 @@ export default function EditPostPage() {
   const htmlRef = useRef("");
 
   useEffect(() => {
-    getPostById(id).then((p) => {
+    async function load() {
+      let p = await getPostById(idOrSlug);
+      if (!p) {
+        p = await getPostBySlug(idOrSlug);
+      }
       if (!p) {
         router.push("/admin");
         return;
       }
+      setPostId(p.id);
       setPost(p);
       setTitle(p.title);
       setSlug(p.slug);
@@ -39,8 +45,9 @@ export default function EditPostPage() {
       }
       htmlRef.current = p.content;
       setLoading(false);
-    });
-  }, [id, router]);
+    }
+    load();
+  }, [idOrSlug, router]);
 
   const handleEditorUpdate = useCallback(
     (_json: unknown, html: string) => {
@@ -50,9 +57,10 @@ export default function EditPostPage() {
   );
 
   async function save(status?: "draft" | "published") {
+    if (!postId) return;
     setSaving(true);
     try {
-      await updatePost(id, {
+      await updatePost(postId, {
         title: title.trim(),
         slug: slug.trim(),
         content: htmlRef.current,
@@ -72,8 +80,8 @@ export default function EditPostPage() {
   }
 
   async function handleDelete() {
-    if (!confirm(`Delete "${title}"?`)) return;
-    await deletePost(id);
+    if (!postId || !confirm(`Delete "${title}"?`)) return;
+    await deletePost(postId);
     router.push("/admin");
   }
 
