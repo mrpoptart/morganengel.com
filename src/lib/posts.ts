@@ -63,7 +63,7 @@ export async function getPublishedPosts(max?: number): Promise<Post[]> {
 }
 
 export async function getAllPosts(): Promise<Post[]> {
-  const q = query(postsRef, orderBy("updatedAt", "desc"));
+  const q = query(postsRef, orderBy("publishedAt", "desc"));
   const snapshot = await getDocs(q);
   return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Post));
 }

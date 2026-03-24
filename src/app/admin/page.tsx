@@ -11,6 +11,11 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     getAllPosts().then((p) => {
+      p.sort((a, b) => {
+        if (a.status === "draft" && b.status !== "draft") return -1;
+        if (a.status !== "draft" && b.status === "draft") return 1;
+        return 0;
+      });
       setPosts(p);
       setLoading(false);
     });
@@ -49,7 +54,7 @@ export default function AdminDashboard() {
             <tr>
               <th>Title</th>
               <th>Status</th>
-              <th>Updated</th>
+              <th>Published</th>
               <th />
             </tr>
           </thead>
@@ -76,8 +81,8 @@ export default function AdminDashboard() {
                   </span>
                 </td>
                 <td className="text-sm text-base-content/50 font-mono">
-                  {post.updatedAt?.toDate?.()
-                    ? post.updatedAt.toDate().toLocaleDateString()
+                  {post.publishedAt?.toDate?.()
+                    ? post.publishedAt.toDate().toLocaleDateString()
                     : "—"}
                 </td>
                 <td>
