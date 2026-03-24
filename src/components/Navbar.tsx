@@ -4,8 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const navLinks = [
-  { href: "/", label: "Home" },
-  { href: "/blog", label: "Blog" },
+  { href: "/", label: "Blog" },
   { href: "/tags", label: "Tags" },
   { href: "/about", label: "About" },
 ];
@@ -19,9 +18,9 @@ export function Navbar() {
         {/* Logo */}
         <Link
           href="/"
-          className="text-lg font-bold font-mono bg-gradient-to-r from-purple-400 to-cyan-400 bg-clip-text text-transparent"
+          className="flex items-center"
         >
-          morgan.engel
+          <img src="/favicon.png" alt="ME" className="w-7 h-7" />
         </Link>
 
         {/* Desktop nav */}

@@ -54,7 +54,7 @@ export default function PostPage() {
     return (
       <div className="max-w-3xl mx-auto px-6 py-16 text-center">
         <h1 className="text-2xl font-bold font-mono mb-4">Post not found</h1>
-        <Link href="/blog" className="text-primary hover:underline font-mono text-sm">
+        <Link href="/" className="text-primary hover:underline font-mono text-sm">
           Back to blog
         </Link>
       </div>
@@ -64,7 +64,7 @@ export default function PostPage() {
   return (
     <article className="max-w-3xl mx-auto px-6 py-16 animate-fade-in-up">
       <Link
-        href="/blog"
+        href="/"
         className="text-sm font-mono text-base-content/40 hover:text-primary mb-8 inline-flex items-center gap-1 transition-colors"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
