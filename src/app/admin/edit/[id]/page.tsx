@@ -4,6 +4,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { getPostById, updatePost, deletePost } from "@/lib/posts";
 import { Editor } from "@/components/Editor";
+import { TagsInput } from "@/components/TagsInput";
 import type { Post } from "@/types/post";
 
 
@@ -117,11 +118,9 @@ export default function EditPostPage() {
         )}
       </div>
 
-      <input
-        type="text"
-        placeholder="Tags (comma separated)"
+      <TagsInput
         value={tags}
-        onChange={(e) => setTags(e.target.value)}
+        onChange={setTags}
         className="input input-ghost text-sm font-mono w-full mb-4 px-0 text-base-content/50 focus:outline-none"
       />
 

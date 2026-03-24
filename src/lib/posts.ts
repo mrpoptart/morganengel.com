@@ -130,6 +130,18 @@ export async function updatePost(
   await updateDoc(doc(db, "posts", id), updates);
 }
 
+export async function getAllTags(): Promise<string[]> {
+  const snapshot = await getDocs(postsRef);
+  const tagSet = new Set<string>();
+  snapshot.docs.forEach((d) => {
+    const data = d.data();
+    if (Array.isArray(data.tags)) {
+      data.tags.forEach((t: string) => tagSet.add(t));
+    }
+  });
+  return Array.from(tagSet).sort();
+}
+
 export async function deletePost(id: string): Promise<void> {
   await deleteDoc(doc(db, "posts", id));
 }
