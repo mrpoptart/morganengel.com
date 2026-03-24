@@ -37,11 +37,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       type: "article",
       publishedTime: post.publishedAt?.toDate().toISOString(),
       tags: post.tags,
+      images: [{ url: "/og-default.png", width: 1200, height: 630 }],
     },
     twitter: {
-      card: "summary",
+      card: "summary_large_image",
       title: post.title,
       description: post.excerpt,
+      images: ["/og-default.png"],
     },
   };
 }

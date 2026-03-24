@@ -7,6 +7,19 @@ import { AuthProvider } from "@/components/AuthProvider";
 export const metadata: Metadata = {
   title: "Morgan's Unquiet Mind",
   description: "Thoughts on code, design & the internet",
+  metadataBase: new URL("https://morganengel.com"),
+  openGraph: {
+    title: "Morgan's Unquiet Mind",
+    description: "Thoughts on code, design & the internet",
+    siteName: "Morgan's Unquiet Mind",
+    images: [{ url: "/og-default.png", width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Morgan's Unquiet Mind",
+    description: "Thoughts on code, design & the internet",
+    images: ["/og-default.png"],
+  },
 };
 
 export default function RootLayout({
