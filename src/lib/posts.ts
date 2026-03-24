@@ -26,8 +26,20 @@ function slugify(text: string): string {
     .trim();
 }
 
+function decodeHtmlEntities(str: string): string {
+  return str
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)))
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, code) => String.fromCharCode(parseInt(code, 16)))
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&nbsp;/g, " ");
+}
+
 function generateExcerpt(html: string, maxLength = 160): string {
-  const text = html.replace(/<[^>]+>/g, "").trim();
+  const text = decodeHtmlEntities(html.replace(/<[^>]+>/g, "")).trim();
   if (text.length <= maxLength) return text;
   return text.slice(0, maxLength).replace(/\s+\S*$/, "") + "...";
 }

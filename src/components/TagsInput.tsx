@@ -34,11 +34,11 @@ export function TagsInput({ value, onChange, className }: TagsInputProps) {
   const currentInput = parts[parts.length - 1].trimStart().toLowerCase();
   const existingTags = parts.slice(0, -1).map((t) => t.trim().toLowerCase());
 
-  const suggestions = currentInput
-    ? allTags.filter(
-        (t) => t.startsWith(currentInput) && !existingTags.includes(t)
-      )
-    : [];
+  const suggestions = allTags.filter(
+    (t) =>
+      !existingTags.includes(t) &&
+      (!currentInput || t.startsWith(currentInput))
+  );
 
   function selectSuggestion(tag: string) {
     const prefix = parts.slice(0, -1).join(", ");
