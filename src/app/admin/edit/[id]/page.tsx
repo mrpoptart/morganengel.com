@@ -21,8 +21,11 @@ export default function EditPostPage() {
   const [publishDate, setPublishDate] = useState("");
   const [editingSlug, setEditingSlug] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [autoSaved, setAutoSaved] = useState(false);
   const [loading, setLoading] = useState(true);
   const htmlRef = useRef("");
+  const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const loadedRef = useRef(false);
 
   useEffect(() => {
     async function load() {
@@ -45,15 +48,46 @@ export default function EditPostPage() {
       }
       htmlRef.current = p.content;
       setLoading(false);
+      // Delay setting loadedRef so initial state changes don't trigger autosave
+      setTimeout(() => { loadedRef.current = true; }, 100);
     }
     load();
   }, [idOrSlug, router]);
 
+  const triggerAutosave = useCallback(() => {
+    if (!postId || post?.status === "published") return;
+    if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
+    setAutoSaved(false);
+    autosaveTimer.current = setTimeout(async () => {
+      await updatePost(postId, {
+        title: title.trim(),
+        slug: slug.trim(),
+        content: htmlRef.current,
+        tags: tags.split(",").map((t) => t.trim().toLowerCase()).filter(Boolean),
+      });
+      setAutoSaved(true);
+    }, 2000);
+  }, [postId, post?.status, title, slug, tags]);
+
+  // Autosave on title/tags changes
+  useEffect(() => {
+    if (!loadedRef.current) return;
+    triggerAutosave();
+  }, [title, tags, triggerAutosave]);
+
+  // Cleanup timer
+  useEffect(() => {
+    return () => {
+      if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
+    };
+  }, []);
+
   const handleEditorUpdate = useCallback(
     (_json: unknown, html: string) => {
       htmlRef.current = html;
+      if (loadedRef.current) triggerAutosave();
     },
-    []
+    [triggerAutosave]
   );
 
   async function save(status?: "draft" | "published") {
@@ -145,12 +179,17 @@ export default function EditPostPage() {
       <Editor initialHTML={post.content} onUpdate={handleEditorUpdate} />
 
       <div className="flex gap-3 mt-6 justify-between">
-        <button
-          onClick={handleDelete}
-          className="btn btn-ghost btn-sm text-error"
-        >
-          Delete
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleDelete}
+            className="btn btn-ghost btn-sm text-error"
+          >
+            Delete
+          </button>
+          {post.status === "draft" && autoSaved && (
+            <span className="text-xs text-base-content/40 font-mono">Saved</span>
+          )}
+        </div>
         <div className="flex gap-3">
           {post.status === "published" ? (
             <>
