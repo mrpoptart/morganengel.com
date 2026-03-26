@@ -1,23 +1,69 @@
+import Link from "next/link";
+
 export default function AboutPage() {
   return (
-    <div className="max-w-2xl mx-auto px-6 py-16 text-center animate-fade-in-up">
-      {/* Avatar placeholder */}
-      <img
-        src="/morgan.jpeg"
-        alt="Morgan Engel"
-        className="w-24 h-24 rounded-full object-cover ring ring-primary ring-offset-base-100 ring-offset-4 mx-auto"
-      />
+    <div className="max-w-2xl mx-auto px-6 py-16 animate-fade-in-up">
+      {/* Header */}
+      <div className="text-center">
+        <img
+          src="/morgan.jpeg"
+          alt="Morgan Engel"
+          className="w-24 h-24 rounded-full object-cover ring ring-primary ring-offset-base-100 ring-offset-4 mx-auto"
+        />
+        <h1 className="text-3xl font-bold font-mono mt-6">
+          Engineer. Dad. Reluctant writer.
+        </h1>
+      </div>
 
-      <h1 className="text-2xl font-bold font-mono mt-6">Morgan Engel</h1>
-
-      <p className="text-base-content/60 mt-4 max-w-md mx-auto leading-relaxed">
-        Software engineer who thinks too much about developer tools, terminal
-        aesthetics, and the craft of building things for the web. Writing here
-        about code, design, and the internet.
+      {/* Opening */}
+      <p className="text-base-content/80 mt-10 leading-relaxed text-lg">
+        I've spent 25 years building things for the web, 13 years raising kids,
+        and 45 years trying to make sense of everything in between. I'm not here
+        because I love writing. I'm here because I keep looking for things on the
+        internet that nobody has bothered to say yet.
       </p>
 
+      {/* What you'll find */}
+      <h2 className="text-xl font-bold font-mono mt-12">
+        What you'll find here
+      </h2>
+      <p className="text-base-content/80 mt-4 leading-relaxed">
+        Engineering. Not just the how, but the why. What it means to build
+        products that matter, lead teams through complexity, and stay curious
+        after two decades of doing this. But also: travel stories from Costa Rica
+        to Ireland. Recipes that actually work. The real experience of parenting
+        kids with ADHD and autism. Life hacks from someone who has tried most of
+        them.
+      </p>
+
+      {/* What I bring */}
+      <h2 className="text-xl font-bold font-mono mt-12">
+        What I bring to the table
+      </h2>
+      <p className="text-base-content/80 mt-4 leading-relaxed">
+        I've worked across startups and public companies, most recently leading
+        engineering teams at Gusto. But the thing I'm actually good at is cutting
+        through noise. Taking disparate ideas, connecting them, and making the
+        complicated feel obvious. I can listen and I can talk, which apparently
+        puts me in a minority on the internet.
+      </p>
+
+      {/* Right now */}
+      <h2 className="text-xl font-bold font-mono mt-12">Right now</h2>
+      <p className="text-base-content/80 mt-4 leading-relaxed">
+        I'm exploring the edges of AI, figuring out fatherhood in real time, and
+        trying to navigate the space between the two.
+      </p>
+
+      {/* CTA */}
+      <div className="mt-16 text-center">
+        <Link href="/" className="btn btn-primary btn-lg font-mono">
+          Start reading →
+        </Link>
+      </div>
+
       {/* Social links */}
-      <div className="flex justify-center gap-4 mt-8">
+      <div className="flex justify-center gap-4 mt-10">
         <a
           href="https://github.com/mrpoptart"
           target="_blank"
@@ -39,7 +85,7 @@ export default function AboutPage() {
           </svg>
         </a>
         <a
-          href="https://linkedin.com"
+          href="https://www.linkedin.com/in/morganengel/"
           target="_blank"
           rel="noopener noreferrer"
           className="btn btn-ghost btn-circle"
