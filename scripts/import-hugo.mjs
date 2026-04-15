@@ -161,19 +161,30 @@ async function importPosts() {
         }
       }
 
-      // Find and upload inline images in markdown (![alt](/img/...))
-      const imgRegex = /src="(\/img\/[^"]+)"/g;
+      // Find and upload inline images in markdown. Handles absolute
+      // (`/img/...`), relative-to-post (`../img/...`, `./img/...`), and
+      // bare (`img/...`) paths — Hugo posts in this repo use a mix.
+      const imgRegex = /src="((?:\.{1,2}\/)*\/?img\/[^"]+)"/g;
+      const inlineSrcs = [];
       let match;
       while ((match = imgRegex.exec(html)) !== null) {
-        const imgPath = match[1].startsWith("/") ? match[1].slice(1) : match[1];
-        const localPath = join(SOURCE_DIR, imgPath);
+        inlineSrcs.push(match[1]);
+      }
+
+      // Collect first, then replace — mutating `html` during exec() with a
+      // global regex causes lastIndex to drift and miss matches.
+      for (const src of inlineSrcs) {
+        // Normalize by slicing from the first "img/" occurrence so that
+        // "../img/sandwich/x.jpg" resolves under SOURCE_DIR/img/sandwich/x.jpg.
+        const relPath = src.slice(src.indexOf("img/"));
+        const localPath = join(SOURCE_DIR, relPath);
 
         if (DRY_RUN) {
           console.log(`  Would upload inline image: ${localPath}`);
         } else {
           const url = await uploadImage(localPath);
           if (url) {
-            html = html.replace(match[1], url);
+            html = html.split(src).join(url);
           }
         }
       }
