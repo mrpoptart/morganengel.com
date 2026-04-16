@@ -77,11 +77,18 @@ async function uploadImage(localPath) {
   return `https://storage.googleapis.com/${bucket.name}/${filename}`;
 }
 
-// Match any <img> src attribute. We'll filter for non-http values below.
+// Match any <img> src attribute. We'll filter below.
 const imgSrcRegex = /<img\b[^>]*?\bsrc="([^"]+)"/g;
 
-function isAbsoluteUrl(src) {
-  return /^https?:\/\//i.test(src) || src.startsWith("data:");
+// A src needs repair if it points at a Hugo `/img/...` asset (in any form:
+// relative `../img/...`, absolute path `/img/...`, or the legacy production
+// URL `https://morganengel.com/img/...`). Firebase-hosted URLs and data:
+// URIs are already fine.
+function needsRepair(src) {
+  if (/^data:/i.test(src)) return false;
+  if (/storage\.googleapis\.com\//i.test(src)) return false;
+  if (/firebasestorage\.googleapis\.com\//i.test(src)) return false;
+  return /(^|\/|\\)img\//i.test(src);
 }
 
 async function main() {
@@ -109,7 +116,7 @@ async function main() {
     imgSrcRegex.lastIndex = 0;
     let m;
     while ((m = imgSrcRegex.exec(original)) !== null) {
-      if (!isAbsoluteUrl(m[1])) found.add(m[1]);
+      if (needsRepair(m[1])) found.add(m[1]);
     }
     if (found.size === 0) continue;
 

@@ -161,14 +161,22 @@ async function importPosts() {
         }
       }
 
-      // Find and upload inline images in markdown. Handles absolute
-      // (`/img/...`), relative-to-post (`../img/...`, `./img/...`), and
-      // bare (`img/...`) paths — Hugo posts in this repo use a mix.
-      const imgRegex = /src="((?:\.{1,2}\/)*\/?img\/[^"]+)"/g;
+      // Find and upload inline images. Hugo markdown in this repo mixes
+      // relative (`../img/...`, `./img/...`), absolute path (`/img/...`),
+      // bare (`img/...`), and legacy production-URL (`https://morganengel.com/img/...`)
+      // forms — all of them point at the same local `source/img/` tree and
+      // need to be swapped for Firebase Storage URLs.
+      const imgRegex = /<img\b[^>]*?\bsrc="([^"]+)"/g;
       const inlineSrcs = [];
       let match;
       while ((match = imgRegex.exec(html)) !== null) {
-        inlineSrcs.push(match[1]);
+        const src = match[1];
+        // Skip Firebase-hosted and data: URIs — already fine.
+        if (/^data:/i.test(src)) continue;
+        if (/(storage|firebasestorage)\.googleapis\.com\//i.test(src)) continue;
+        // Only rewrite srcs that reference a local `img/` asset.
+        if (!/(^|\/)img\//i.test(src)) continue;
+        inlineSrcs.push(src);
       }
 
       // Collect first, then replace — mutating `html` during exec() with a
