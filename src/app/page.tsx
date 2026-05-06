@@ -2,12 +2,24 @@
 
 import { useEffect, useState } from "react";
 import { PostCard } from "@/components/PostCard";
+import { QuoteCard } from "@/components/QuoteCard";
 import { getPublishedPosts } from "@/lib/posts";
+import { getQuotes } from "@/lib/quotes";
 import type { Post } from "@/types/post";
+import type { Quote } from "@/types/quote";
+import type { Timestamp } from "firebase/firestore";
 
-function formatDate(post: Post): string {
-  if (!post.publishedAt?.toDate) return "";
-  return post.publishedAt.toDate().toLocaleDateString("en-US", {
+type FeedItem =
+  | { kind: "post"; data: Post; sortKey: number }
+  | { kind: "quote"; data: Quote; sortKey: number };
+
+function tsToMillis(ts: Timestamp | null | undefined): number {
+  return ts?.toMillis?.() ?? 0;
+}
+
+function formatDate(ts: Timestamp | null | undefined): string {
+  if (!ts?.toDate) return "";
+  return ts.toDate().toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -15,12 +27,24 @@ function formatDate(post: Post): string {
 }
 
 export default function Home() {
-  const [posts, setPosts] = useState<Post[]>([]);
+  const [items, setItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getPublishedPosts().then((p) => {
-      setPosts(p);
+    Promise.all([getPublishedPosts(), getQuotes()]).then(([posts, quotes]) => {
+      const merged: FeedItem[] = [
+        ...posts.map<FeedItem>((p) => ({
+          kind: "post",
+          data: p,
+          sortKey: tsToMillis(p.publishedAt),
+        })),
+        ...quotes.map<FeedItem>((q) => ({
+          kind: "quote",
+          data: q,
+          sortKey: tsToMillis(q.publishedAt),
+        })),
+      ].sort((a, b) => b.sortKey - a.sortKey);
+      setItems(merged);
       setLoading(false);
     });
   }, []);
@@ -43,23 +67,33 @@ export default function Home() {
             <div key={i} className="skeleton h-48 w-full rounded-xl" />
           ))}
         </div>
-      ) : posts.length === 0 ? (
+      ) : items.length === 0 ? (
         <p className="text-base-content/40 text-center py-12">
           No posts yet.
         </p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {posts.map((post, i) => (
-            <PostCard
-              key={post.id}
-              slug={post.slug}
-              title={post.title}
-              excerpt={post.excerpt}
-              date={formatDate(post)}
-              tags={post.tags}
-              index={i}
-            />
-          ))}
+          {items.map((item, i) =>
+            item.kind === "post" ? (
+              <PostCard
+                key={`post-${item.data.id}`}
+                slug={item.data.slug}
+                title={item.data.title}
+                excerpt={item.data.excerpt}
+                date={formatDate(item.data.publishedAt)}
+                tags={item.data.tags}
+                index={i}
+              />
+            ) : (
+              <QuoteCard
+                key={`quote-${item.data.id}`}
+                body={item.data.body}
+                author={item.data.author}
+                date={formatDate(item.data.publishedAt)}
+                index={i}
+              />
+            )
+          )}
         </div>
       )}
     </div>
