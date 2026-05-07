@@ -72,7 +72,7 @@ export default function Home() {
           No posts yet.
         </p>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 md:grid-flow-row-dense gap-6">
           {items.map((item, i) =>
             item.kind === "post" ? (
               <PostCard
