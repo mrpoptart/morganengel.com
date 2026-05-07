@@ -8,7 +8,7 @@ interface QuoteCardProps {
 export function QuoteCard({ body, author, date, index = 0 }: QuoteCardProps) {
   return (
     <figure
-      className="relative px-6 py-8 animate-fade-in-up"
+      className="relative px-6 py-8 animate-fade-in-up md:col-span-2"
       style={{ animationDelay: `${index * 100}ms` }}
     >
       <span
