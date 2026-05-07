@@ -26,6 +26,14 @@ function formatDate(ts: Timestamp | null | undefined): string {
   });
 }
 
+function formatMonthYear(ts: Timestamp | null | undefined): string {
+  if (!ts?.toDate) return "";
+  return ts.toDate().toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+  });
+}
+
 export default function Home() {
   const [items, setItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -89,7 +97,7 @@ export default function Home() {
                 key={`quote-${item.data.id}`}
                 body={item.data.body}
                 author={item.data.author}
-                date={formatDate(item.data.publishedAt)}
+                date={formatMonthYear(item.data.publishedAt)}
                 index={i}
               />
             )
