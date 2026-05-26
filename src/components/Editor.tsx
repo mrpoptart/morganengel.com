@@ -161,6 +161,11 @@ function Toolbar({ portalTarget }: { portalTarget: HTMLElement | null }) {
         isActive={editor.isActive("blockquote")}
         onClick={() => editor.chain().focus().toggleBlockquote().run()}
       />
+      <ToolbarButton
+        label="{ }"
+        isActive={editor.isActive("codeBlock")}
+        onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+      />
 
       <Divider />
 
