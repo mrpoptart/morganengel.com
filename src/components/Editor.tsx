@@ -16,6 +16,8 @@ import Underline from "@tiptap/extension-underline";
 import Highlight from "@tiptap/extension-highlight";
 import Placeholder from "@tiptap/extension-placeholder";
 import { uploadImage } from "@/lib/upload";
+import { CodeBlockWithLanguage } from "./CodeBlockWithLanguage";
+import { highlightHtml } from "@/lib/highlightHtml";
 
 interface EditorProps {
   initialContent?: JSONContent;
@@ -41,7 +43,8 @@ function handleImageFiles(
 }
 
 const extensions = [
-  StarterKit,
+  StarterKit.configure({ codeBlock: false }),
+  CodeBlockWithLanguage,
   Link.configure({
     openOnClick: false,
     HTMLAttributes: { class: "link link-primary" },
@@ -215,7 +218,7 @@ export function Editor({ initialContent, initialHTML, onUpdate }: EditorProps) {
           className="prose prose-invert prose-lg max-w-none prose-blog p-6 min-h-[600px] focus:outline-none"
           onUpdate={({ editor }) => {
             const json = editor.getJSON();
-            onUpdate?.(json, editor.getHTML());
+            onUpdate?.(json, highlightHtml(editor.getHTML()));
           }}
           editorProps={{
             handlePaste(view, event) {
