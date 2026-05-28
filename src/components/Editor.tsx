@@ -17,6 +17,7 @@ import Highlight from "@tiptap/extension-highlight";
 import Placeholder from "@tiptap/extension-placeholder";
 import { uploadImage } from "@/lib/upload";
 import { CodeBlockWithLanguage } from "./CodeBlockWithLanguage";
+import { Caption } from "./Caption";
 import { highlightHtml } from "@/lib/highlightHtml";
 
 interface EditorProps {
@@ -45,6 +46,7 @@ function handleImageFiles(
 const extensions = [
   StarterKit.configure({ codeBlock: false }),
   CodeBlockWithLanguage,
+  Caption,
   Link.configure({
     openOnClick: false,
     HTMLAttributes: { class: "link link-primary" },
@@ -168,6 +170,25 @@ function Toolbar({ portalTarget }: { portalTarget: HTMLElement | null }) {
         label="{ }"
         isActive={editor.isActive("codeBlock")}
         onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+      />
+      <ToolbarButton
+        label={
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <rect x="3" y="4" width="18" height="11" rx="2" />
+            <line x1="7" y1="20" x2="17" y2="20" strokeLinecap="round" />
+          </svg>
+        }
+        isActive={editor.isActive("caption")}
+        onClick={() =>
+          editor.chain().focus().toggleNode("caption", "paragraph").run()
+        }
       />
 
       <Divider />
