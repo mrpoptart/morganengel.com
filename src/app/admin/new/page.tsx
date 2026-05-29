@@ -44,6 +44,33 @@ export default function NewPostPage() {
     }
   }
 
+  const actionButtons = (
+    <div className="flex gap-3">
+      <button
+        onClick={() => save("draft")}
+        disabled={saving || !title.trim()}
+        className="btn btn-outline btn-sm"
+      >
+        {saving ? (
+          <span className="loading loading-spinner loading-xs" />
+        ) : (
+          "Save Draft"
+        )}
+      </button>
+      <button
+        onClick={() => save("published")}
+        disabled={saving || !title.trim()}
+        className="btn btn-primary btn-sm"
+      >
+        {saving ? (
+          <span className="loading loading-spinner loading-xs" />
+        ) : (
+          "Publish"
+        )}
+      </button>
+    </div>
+  );
+
   return (
     <div className="animate-fade-in-up">
       <input
@@ -70,32 +97,11 @@ export default function NewPostPage() {
         />
       </div>
 
+      <div className="flex justify-end mb-3">{actionButtons}</div>
+
       <Editor onUpdate={handleEditorUpdate} />
 
-      <div className="flex gap-3 mt-6 justify-end">
-        <button
-          onClick={() => save("draft")}
-          disabled={saving || !title.trim()}
-          className="btn btn-outline btn-sm"
-        >
-          {saving ? (
-            <span className="loading loading-spinner loading-xs" />
-          ) : (
-            "Save Draft"
-          )}
-        </button>
-        <button
-          onClick={() => save("published")}
-          disabled={saving || !title.trim()}
-          className="btn btn-primary btn-sm"
-        >
-          {saving ? (
-            <span className="loading loading-spinner loading-xs" />
-          ) : (
-            "Publish"
-          )}
-        </button>
-      </div>
+      <div className="flex gap-3 mt-6 justify-end">{actionButtons}</div>
     </div>
   );
 }

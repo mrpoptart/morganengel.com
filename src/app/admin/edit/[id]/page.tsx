@@ -129,6 +129,54 @@ export default function EditPostPage() {
 
   if (!post) return null;
 
+  const actionButtons = (
+    <div className="flex gap-3">
+      {post.status === "published" ? (
+        <>
+          <button
+            onClick={() => save("draft")}
+            disabled={saving}
+            className="btn btn-outline btn-sm"
+          >
+            Unpublish
+          </button>
+          <button
+            onClick={() => save("published")}
+            disabled={saving}
+            className="btn btn-primary btn-sm"
+          >
+            {saving ? (
+              <span className="loading loading-spinner loading-xs" />
+            ) : (
+              "Update"
+            )}
+          </button>
+        </>
+      ) : (
+        <>
+          <button
+            onClick={() => save("draft")}
+            disabled={saving}
+            className="btn btn-outline btn-sm"
+          >
+            Save Draft
+          </button>
+          <button
+            onClick={() => save("published")}
+            disabled={saving}
+            className="btn btn-primary btn-sm"
+          >
+            {saving ? (
+              <span className="loading loading-spinner loading-xs" />
+            ) : (
+              "Publish"
+            )}
+          </button>
+        </>
+      )}
+    </div>
+  );
+
   return (
     <div className="animate-fade-in-up">
       <input
@@ -176,6 +224,8 @@ export default function EditPostPage() {
         />
       </div>
 
+      <div className="flex justify-end mb-3">{actionButtons}</div>
+
       <Editor initialHTML={post.content} onUpdate={handleEditorUpdate} />
 
       <div className="flex gap-3 mt-6 justify-between">
@@ -190,51 +240,7 @@ export default function EditPostPage() {
             <span className="text-xs text-base-content/40 font-mono">Saved</span>
           )}
         </div>
-        <div className="flex gap-3">
-          {post.status === "published" ? (
-            <>
-              <button
-                onClick={() => save("draft")}
-                disabled={saving}
-                className="btn btn-outline btn-sm"
-              >
-                Unpublish
-              </button>
-              <button
-                onClick={() => save("published")}
-                disabled={saving}
-                className="btn btn-primary btn-sm"
-              >
-                {saving ? (
-                  <span className="loading loading-spinner loading-xs" />
-                ) : (
-                  "Update"
-                )}
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                onClick={() => save("draft")}
-                disabled={saving}
-                className="btn btn-outline btn-sm"
-              >
-                Save Draft
-              </button>
-              <button
-                onClick={() => save("published")}
-                disabled={saving}
-                className="btn btn-primary btn-sm"
-              >
-                {saving ? (
-                  <span className="loading loading-spinner loading-xs" />
-                ) : (
-                  "Publish"
-                )}
-              </button>
-            </>
-          )}
-        </div>
+        {actionButtons}
       </div>
     </div>
   );
