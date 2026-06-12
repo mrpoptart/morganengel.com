@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import { getPostBySlugServer } from "@/lib/posts-server";
 import PostContent from "./PostContent";
 
+export const revalidate = 60;
+
 type Props = {
   params: Promise<{ slug: string }>;
 };

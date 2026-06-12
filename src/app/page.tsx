@@ -5,6 +5,8 @@ import {
   getQuotesServer,
 } from "@/lib/posts-server";
 
+export const revalidate = 60;
+
 type FeedItem =
   | { kind: "post"; id: string; sortKey: number; slug: string; title: string; excerpt: string; date: string; tags: string[] }
   | { kind: "quote"; id: string; sortKey: number; body: string; author: string; date: string };

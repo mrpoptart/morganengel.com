@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { getPublishedPostsServer } from "@/lib/posts-server";
 
+export const revalidate = 60;
+
 export default async function TagsPage() {
   const posts = await getPublishedPostsServer();
 

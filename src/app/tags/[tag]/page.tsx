@@ -2,6 +2,8 @@ import Link from "next/link";
 import { PostCard } from "@/components/PostCard";
 import { getPublishedPostsServer } from "@/lib/posts-server";
 
+export const revalidate = 60;
+
 type Props = {
   params: Promise<{ tag: string }>;
 };

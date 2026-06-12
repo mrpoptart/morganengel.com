@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { FadeInUp } from "./FadeInUp";
 
 interface PostCardProps {
   slug: string;
@@ -19,10 +18,10 @@ export function PostCard({
   index = 0,
 }: PostCardProps) {
   return (
-    <FadeInUp style={{ animationDelay: `${index * 100}ms` }}>
     <Link
       href={`/posts/${slug}`}
-      className="card bg-base-200/50 border border-base-content/5 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 hover:-translate-y-1 cursor-pointer"
+      className="card bg-base-200/50 border border-base-content/5 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 hover:-translate-y-1 cursor-pointer animate-fade-in-up"
+      style={{ animationDelay: `${Math.min(index * 50, 300)}ms` }}
     >
       <div className="card-body p-6">
         <span className="text-xs font-mono text-base-content/40 mb-2">
@@ -46,6 +45,5 @@ export function PostCard({
         </div>
       </div>
     </Link>
-    </FadeInUp>
   );
 }
