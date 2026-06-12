@@ -1,3 +1,5 @@
+import { FadeInUp } from "./FadeInUp";
+
 interface QuoteCardProps {
   body: string;
   author: string;
@@ -8,9 +10,9 @@ interface QuoteCardProps {
 export function QuoteCard({ body, author, date, index = 0 }: QuoteCardProps) {
   const meta = [author, date].filter(Boolean).join(" · ");
   return (
+    <FadeInUp className="md:col-span-2" style={{ animationDelay: `${index * 100}ms` }}>
     <figure
-      className="card bg-base-200/50 border border-base-content/5 animate-fade-in-up md:col-span-2"
-      style={{ animationDelay: `${index * 100}ms` }}
+      className="card bg-base-200/50 border border-base-content/5"
     >
       <div className="card-body py-6">
         <div className="flex items-start gap-3 mx-auto max-w-2xl">
@@ -33,5 +35,6 @@ export function QuoteCard({ body, author, date, index = 0 }: QuoteCardProps) {
         </div>
       </div>
     </figure>
+    </FadeInUp>
   );
 }
