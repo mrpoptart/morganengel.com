@@ -17,9 +17,17 @@ export function FadeInUp({
     const el = ref.current;
     if (!el) return;
 
+    const rect = el.getBoundingClientRect();
+    if (rect.top < window.innerHeight && rect.bottom > 0) {
+      return;
+    }
+
+    el.style.opacity = "0";
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
+          el.style.opacity = "";
           el.classList.add("animate-fade-in-up");
           observer.unobserve(el);
         }
@@ -32,7 +40,7 @@ export function FadeInUp({
   }, []);
 
   return (
-    <div ref={ref} className={`opacity-0 ${className}`} style={style}>
+    <div ref={ref} className={className} style={style}>
       {children}
     </div>
   );
