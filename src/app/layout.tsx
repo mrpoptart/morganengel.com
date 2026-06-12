@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import "./globals.css";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { AuthProvider } from "@/components/AuthProvider";
+import { AnalyticsProvider } from "@/components/AnalyticsProvider";
 
 export const metadata: Metadata = {
   title: "Morgan's Unquiet Mind",
@@ -47,6 +49,9 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col font-sans">
         <AuthProvider>
+          <Suspense fallback={null}>
+            <AnalyticsProvider />
+          </Suspense>
           <Navbar />
           <main className="flex-1">{children}</main>
           <Footer />
