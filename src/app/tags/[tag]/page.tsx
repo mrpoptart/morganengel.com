@@ -46,6 +46,7 @@ export default async function TagPage({ params }: Props) {
               date={formatDate(post.publishedAt)}
               tags={post.tags}
               index={i}
+              total={posts.length}
             />
           ))}
         </div>

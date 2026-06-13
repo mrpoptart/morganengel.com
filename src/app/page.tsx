@@ -83,6 +83,7 @@ export default async function Home() {
                 date={item.date}
                 tags={item.tags}
                 index={i}
+                total={items.length}
               />
             ) : (
               <QuoteCard
@@ -91,6 +92,7 @@ export default async function Home() {
                 author={item.author}
                 date={item.date}
                 index={i}
+                total={items.length}
               />
             )
           )}

@@ -7,6 +7,7 @@ interface PostCardProps {
   date: string;
   tags: string[];
   index?: number;
+  total?: number;
 }
 
 export function PostCard({
@@ -16,12 +17,13 @@ export function PostCard({
   date,
   tags,
   index = 0,
+  total = 1,
 }: PostCardProps) {
   return (
     <Link
       href={`/posts/${slug}`}
       className="card bg-base-200/50 border border-base-content/5 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 hover:-translate-y-1 cursor-pointer animate-fade-in-up"
-      style={{ animationDelay: `${Math.min(index * 50, 300)}ms` }}
+      style={{ animationDelay: `${Math.round((index / total) * 2000)}ms` }}
     >
       <div className="card-body p-6">
         <span className="text-xs font-mono text-base-content/40 mb-2">
