@@ -1,7 +1,5 @@
-"use client";
-
 import Link from "next/link";
-import { useAuth } from "@/components/AuthProvider";
+import AdminEditLink from "./AdminEditLink";
 
 interface PostContentProps {
   slug: string;
@@ -13,8 +11,6 @@ interface PostContentProps {
 }
 
 export default function PostContent({ slug, title, content, date, tags, readingTime }: PostContentProps) {
-  const { isAdmin } = useAuth();
-
   return (
     <article className="max-w-3xl mx-auto px-6 py-16 animate-fade-in-up">
       <Link
@@ -47,17 +43,7 @@ export default function PostContent({ slug, title, content, date, tags, readingT
             </Link>
           ))}
         </div>
-        {isAdmin && (
-          <>
-            <span>&middot;</span>
-            <Link
-              href={`/admin/edit/${slug}`}
-              className="hover:text-primary transition-colors"
-            >
-              Edit
-            </Link>
-          </>
-        )}
+        <AdminEditLink slug={slug} />
       </div>
 
       <div className="divider mt-8" />

@@ -15,7 +15,17 @@ export interface ServerPost {
   updatedAt: FirebaseFirestore.Timestamp;
 }
 
+export interface ServerQuote {
+  id: string;
+  body: string;
+  author: string;
+  publishedAt: FirebaseFirestore.Timestamp | null;
+  createdAt: FirebaseFirestore.Timestamp;
+  updatedAt: FirebaseFirestore.Timestamp;
+}
+
 const postsRef = adminDb.collection("posts");
+const quotesRef = adminDb.collection("quotes");
 
 export async function getPostBySlugServer(slug: string): Promise<ServerPost | null> {
   const snapshot = await postsRef.where("slug", "==", slug).limit(1).get();
@@ -30,4 +40,9 @@ export async function getPublishedPostsServer(): Promise<ServerPost[]> {
     .orderBy("publishedAt", "desc")
     .get();
   return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as ServerPost));
+}
+
+export async function getQuotesServer(): Promise<ServerQuote[]> {
+  const snapshot = await quotesRef.orderBy("publishedAt", "desc").get();
+  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as ServerQuote));
 }

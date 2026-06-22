@@ -3,14 +3,15 @@ interface QuoteCardProps {
   author: string;
   date: string;
   index?: number;
+  total?: number;
 }
 
-export function QuoteCard({ body, author, date, index = 0 }: QuoteCardProps) {
+export function QuoteCard({ body, author, date, index = 0, total = 1 }: QuoteCardProps) {
   const meta = [author, date].filter(Boolean).join(" · ");
   return (
     <figure
       className="card bg-base-200/50 border border-base-content/5 animate-fade-in-up md:col-span-2"
-      style={{ animationDelay: `${index * 100}ms` }}
+      style={{ animationDelay: `${Math.round((index / total) * 2000)}ms` }}
     >
       <div className="card-body py-6">
         <div className="flex items-start gap-3 mx-auto max-w-2xl">

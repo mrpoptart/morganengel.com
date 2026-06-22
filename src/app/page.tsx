@@ -1,24 +1,18 @@
-"use client";
-
-import { useEffect, useState } from "react";
 import { PostCard } from "@/components/PostCard";
 import { QuoteCard } from "@/components/QuoteCard";
-import { getPublishedPosts } from "@/lib/posts";
-import { getQuotes } from "@/lib/quotes";
-import type { Post } from "@/types/post";
-import type { Quote } from "@/types/quote";
-import type { Timestamp } from "firebase/firestore";
+import {
+  getPublishedPostsServer,
+  getQuotesServer,
+} from "@/lib/posts-server";
+
+export const revalidate = 60;
 
 type FeedItem =
-  | { kind: "post"; data: Post; sortKey: number }
-  | { kind: "quote"; data: Quote; sortKey: number };
+  | { kind: "post"; id: string; sortKey: number; slug: string; title: string; excerpt: string; date: string; tags: string[] }
+  | { kind: "quote"; id: string; sortKey: number; body: string; author: string; date: string };
 
-function tsToMillis(ts: Timestamp | null | undefined): number {
-  return ts?.toMillis?.() ?? 0;
-}
-
-function formatDate(ts: Timestamp | null | undefined): string {
-  if (!ts?.toDate) return "";
+function formatDate(ts: FirebaseFirestore.Timestamp | null): string {
+  if (!ts) return "";
   return ts.toDate().toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
@@ -26,36 +20,40 @@ function formatDate(ts: Timestamp | null | undefined): string {
   });
 }
 
-function formatMonthYear(ts: Timestamp | null | undefined): string {
-  if (!ts?.toDate) return "";
+function formatMonthYear(ts: FirebaseFirestore.Timestamp | null): string {
+  if (!ts) return "";
   return ts.toDate().toLocaleDateString("en-US", {
     month: "long",
     year: "numeric",
   });
 }
 
-export default function Home() {
-  const [items, setItems] = useState<FeedItem[]>([]);
-  const [loading, setLoading] = useState(true);
+export default async function Home() {
+  const [posts, quotes] = await Promise.all([
+    getPublishedPostsServer(),
+    getQuotesServer(),
+  ]);
 
-  useEffect(() => {
-    Promise.all([getPublishedPosts(), getQuotes()]).then(([posts, quotes]) => {
-      const merged: FeedItem[] = [
-        ...posts.map<FeedItem>((p) => ({
-          kind: "post",
-          data: p,
-          sortKey: tsToMillis(p.publishedAt),
-        })),
-        ...quotes.map<FeedItem>((q) => ({
-          kind: "quote",
-          data: q,
-          sortKey: tsToMillis(q.publishedAt),
-        })),
-      ].sort((a, b) => b.sortKey - a.sortKey);
-      setItems(merged);
-      setLoading(false);
-    });
-  }, []);
+  const items: FeedItem[] = [
+    ...posts.map<FeedItem>((p) => ({
+      kind: "post",
+      id: p.id,
+      sortKey: p.publishedAt?.toMillis() ?? 0,
+      slug: p.slug,
+      title: p.title,
+      excerpt: p.excerpt,
+      date: formatDate(p.publishedAt),
+      tags: p.tags,
+    })),
+    ...quotes.map<FeedItem>((q) => ({
+      kind: "quote",
+      id: q.id,
+      sortKey: q.publishedAt?.toMillis() ?? 0,
+      body: q.body,
+      author: q.author,
+      date: formatMonthYear(q.publishedAt),
+    })),
+  ].sort((a, b) => b.sortKey - a.sortKey);
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-16">
@@ -69,13 +67,7 @@ export default function Home() {
           super tall lover of life
         </p>
       </div>
-      {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="skeleton h-48 w-full rounded-xl" />
-          ))}
-        </div>
-      ) : items.length === 0 ? (
+      {items.length === 0 ? (
         <p className="text-base-content/40 text-center py-12">
           No posts yet.
         </p>
@@ -84,21 +76,23 @@ export default function Home() {
           {items.map((item, i) =>
             item.kind === "post" ? (
               <PostCard
-                key={`post-${item.data.id}`}
-                slug={item.data.slug}
-                title={item.data.title}
-                excerpt={item.data.excerpt}
-                date={formatDate(item.data.publishedAt)}
-                tags={item.data.tags}
+                key={`post-${item.id}`}
+                slug={item.slug}
+                title={item.title}
+                excerpt={item.excerpt}
+                date={item.date}
+                tags={item.tags}
                 index={i}
+                total={items.length}
               />
             ) : (
               <QuoteCard
-                key={`quote-${item.data.id}`}
-                body={item.data.body}
-                author={item.data.author}
-                date={formatMonthYear(item.data.publishedAt)}
+                key={`quote-${item.id}`}
+                body={item.body}
+                author={item.author}
+                date={item.date}
                 index={i}
+                total={items.length}
               />
             )
           )}
