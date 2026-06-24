@@ -225,7 +225,7 @@ export function Editor({ initialContent, initialHTML, onUpdate }: EditorProps) {
   }, []);
 
   return (
-    <div className="min-h-[600px] border border-base-content/10 rounded-xl bg-base-200/30">
+    <div className="min-h-[200px] max-h-[60dvh] flex flex-col border border-base-content/10 rounded-xl bg-base-200/30">
       {/* Toolbar portal target — sticky at top */}
       <div
         ref={toolbarRef}
@@ -236,7 +236,7 @@ export function Editor({ initialContent, initialHTML, onUpdate }: EditorProps) {
         <EditorContent
           initialContent={content}
           extensions={extensions}
-          className="prose prose-invert prose-lg max-w-none prose-blog p-6 min-h-[600px] focus:outline-none"
+          className="prose prose-invert prose-lg max-w-none prose-blog p-6 min-h-[200px] flex-1 overflow-y-auto focus:outline-none"
           onUpdate={({ editor }) => {
             const json = editor.getJSON();
             onUpdate?.(json, highlightHtml(editor.getHTML()));
