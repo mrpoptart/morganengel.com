@@ -211,7 +211,7 @@
 
 /* Novel/TipTap editor - make editable area fill container */
 .tiptap {
-  min-height: 600px;
+  min-height: 4em;
   outline: none;
 }
 

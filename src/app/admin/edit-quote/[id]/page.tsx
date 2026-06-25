@@ -81,7 +81,7 @@ export default function EditQuotePage() {
         value={body}
         onChange={(e) => setBody(e.target.value)}
         rows={6}
-        className="textarea textarea-ghost text-lg font-serif italic w-full mb-4 px-0 focus:outline-none resize-y"
+        className="textarea textarea-ghost text-lg font-serif italic w-full mb-4 px-0 focus:outline-none resize-y max-h-[min(800px,100dvh)]"
       />
 
       <div className="flex items-center gap-2 mb-4">

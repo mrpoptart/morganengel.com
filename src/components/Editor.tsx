@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import {
   EditorRoot,
@@ -211,6 +211,31 @@ function Toolbar({ portalTarget }: { portalTarget: HTMLElement | null }) {
   return createPortal(toolbar, portalTarget);
 }
 
+const MAX_EDITOR_PX = 800;
+
+function useVisualViewportHeight() {
+  const [maxH, setMaxH] = useState<string>(`${MAX_EDITOR_PX}px`);
+
+  const update = useCallback(() => {
+    const vvh = window.visualViewport?.height ?? window.innerHeight;
+    const capped = Math.min(MAX_EDITOR_PX, vvh);
+    setMaxH(`${capped}px`);
+  }, []);
+
+  useEffect(() => {
+    update();
+    const vv = window.visualViewport;
+    if (vv) {
+      vv.addEventListener("resize", update);
+      return () => vv.removeEventListener("resize", update);
+    }
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, [update]);
+
+  return maxH;
+}
+
 export function Editor({ initialContent, initialHTML, onUpdate }: EditorProps) {
   const [content] = useState<JSONContent | undefined>(() => {
     if (initialContent) return initialContent;
@@ -219,13 +244,17 @@ export function Editor({ initialContent, initialHTML, onUpdate }: EditorProps) {
   });
   const toolbarRef = useRef<HTMLDivElement>(null);
   const [toolbarTarget, setToolbarTarget] = useState<HTMLElement | null>(null);
+  const maxH = useVisualViewportHeight();
 
   useEffect(() => {
     setToolbarTarget(toolbarRef.current);
   }, []);
 
   return (
-    <div className="min-h-[600px] border border-base-content/10 rounded-xl bg-base-200/30">
+    <div
+      style={{ maxHeight: maxH }}
+      className="flex flex-col border border-base-content/10 rounded-xl bg-base-200/30 overflow-hidden"
+    >
       {/* Toolbar portal target — sticky at top */}
       <div
         ref={toolbarRef}
@@ -236,7 +265,7 @@ export function Editor({ initialContent, initialHTML, onUpdate }: EditorProps) {
         <EditorContent
           initialContent={content}
           extensions={extensions}
-          className="prose prose-invert prose-lg max-w-none prose-blog p-6 min-h-[600px] focus:outline-none"
+          className="prose prose-invert prose-lg max-w-none prose-blog p-6 flex-1 overflow-y-auto focus:outline-none"
           onUpdate={({ editor }) => {
             const json = editor.getJSON();
             onUpdate?.(json, highlightHtml(editor.getHTML()));
