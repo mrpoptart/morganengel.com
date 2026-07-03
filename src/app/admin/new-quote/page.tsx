@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createQuote, DEFAULT_QUOTE_AUTHOR } from "@/lib/quotes";
+import { revalidateHome } from "@/app/actions";
 
 export default function NewQuotePage() {
   const router = useRouter();
@@ -20,6 +21,7 @@ export default function NewQuotePage() {
         author: author.trim() || DEFAULT_QUOTE_AUTHOR,
         ...(publishDate ? { publishedAt: new Date(publishDate) } : {}),
       });
+      await revalidateHome();
       router.push("/admin");
     } catch (error) {
       console.error("Failed to save quote:", error);

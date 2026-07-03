@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { getPostById, getPostBySlug, updatePost, deletePost } from "@/lib/posts";
+import { revalidateHome } from "@/app/actions";
 import { Editor } from "@/components/Editor";
 import { TagsInput } from "@/components/TagsInput";
 import type { Post } from "@/types/post";
@@ -105,6 +106,7 @@ export default function EditPostPage() {
         ...(status ? { status } : {}),
         ...(publishDate ? { publishedAt: new Date(publishDate) } : {}),
       });
+      await revalidateHome();
       router.push("/admin");
     } catch (error) {
       console.error("Failed to save:", error);
@@ -116,6 +118,7 @@ export default function EditPostPage() {
   async function handleDelete() {
     if (!postId || !confirm(`Delete "${title}"?`)) return;
     await deletePost(postId);
+    await revalidateHome();
     router.push("/admin");
   }
 

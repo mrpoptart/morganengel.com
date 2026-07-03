@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getAllPosts, deletePost } from "@/lib/posts";
 import { getQuotes, deleteQuote } from "@/lib/quotes";
+import { revalidateHome } from "@/app/actions";
 import type { Post } from "@/types/post";
 import type { Quote } from "@/types/quote";
 import type { Timestamp } from "firebase/firestore";
@@ -52,6 +53,7 @@ export default function AdminDashboard() {
   async function handleDeletePost(id: string, title: string) {
     if (!confirm(`Delete "${title}"?`)) return;
     await deletePost(id);
+    await revalidateHome();
     setRows((prev) =>
       prev.filter((r) => !(r.kind === "post" && r.data.id === id))
     );
@@ -60,6 +62,7 @@ export default function AdminDashboard() {
   async function handleDeleteQuote(id: string) {
     if (!confirm("Delete this quote?")) return;
     await deleteQuote(id);
+    await revalidateHome();
     setRows((prev) =>
       prev.filter((r) => !(r.kind === "quote" && r.data.id === id))
     );

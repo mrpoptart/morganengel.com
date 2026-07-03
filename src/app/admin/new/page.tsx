@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createPost } from "@/lib/posts";
+import { revalidateHome } from "@/app/actions";
 import { Editor } from "@/components/Editor";
 import { TagsInput } from "@/components/TagsInput";
 import type { JSONContent } from "novel";
@@ -36,6 +37,7 @@ export default function NewPostPage() {
         status,
         ...(publishDate ? { publishedAt: new Date(publishDate) } : {}),
       });
+      await revalidateHome();
       router.push("/admin");
     } catch (error) {
       console.error("Failed to save:", error);

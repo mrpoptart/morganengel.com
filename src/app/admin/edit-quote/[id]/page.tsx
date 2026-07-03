@@ -8,6 +8,7 @@ import {
   deleteQuote,
   DEFAULT_QUOTE_AUTHOR,
 } from "@/lib/quotes";
+import { revalidateHome } from "@/app/actions";
 import type { Quote } from "@/types/quote";
 
 export default function EditQuotePage() {
@@ -49,6 +50,7 @@ export default function EditQuotePage() {
         author: author.trim() || DEFAULT_QUOTE_AUTHOR,
         ...(publishDate ? { publishedAt: new Date(publishDate) } : {}),
       });
+      await revalidateHome();
       router.push("/admin");
     } catch (error) {
       console.error("Failed to save quote:", error);
@@ -60,6 +62,7 @@ export default function EditQuotePage() {
   async function handleDelete() {
     if (!quote || !confirm("Delete this quote?")) return;
     await deleteQuote(quote.id);
+    await revalidateHome();
     router.push("/admin");
   }
 
