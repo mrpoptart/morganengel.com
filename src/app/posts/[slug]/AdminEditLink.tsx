@@ -3,7 +3,13 @@
 import Link from "next/link";
 import { useAuth } from "@/components/AuthProvider";
 
-export default function AdminEditLink({ slug }: { slug: string }) {
+export default function AdminEditLink({
+  slug,
+  basePath = "/admin/edit",
+}: {
+  slug: string;
+  basePath?: string;
+}) {
   const { isAdmin } = useAuth();
   if (!isAdmin) return null;
 
@@ -11,7 +17,7 @@ export default function AdminEditLink({ slug }: { slug: string }) {
     <>
       <span>&middot;</span>
       <Link
-        href={`/admin/edit/${slug}`}
+        href={`${basePath}/${slug}`}
         className="hover:text-primary transition-colors"
       >
         Edit

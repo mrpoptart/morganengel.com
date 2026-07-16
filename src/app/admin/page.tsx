@@ -4,13 +4,16 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getAllPosts, deletePost } from "@/lib/posts";
 import { getQuotes, deleteQuote } from "@/lib/quotes";
+import { getAllJournal, deleteJournal } from "@/lib/journal";
 import type { Post } from "@/types/post";
 import type { Quote } from "@/types/quote";
+import type { JournalEntry } from "@/types/journal";
 import type { Timestamp } from "firebase/firestore";
 
 type Row =
   | { kind: "post"; data: Post; sortKey: number }
-  | { kind: "quote"; data: Quote; sortKey: number };
+  | { kind: "quote"; data: Quote; sortKey: number }
+  | { kind: "journal"; data: JournalEntry; sortKey: number };
 
 function tsToMillis(ts: Timestamp | null | undefined): number {
   return ts?.toMillis?.() ?? 0;
@@ -27,26 +30,36 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([getAllPosts(), getQuotes()]).then(([posts, quotes]) => {
-      const merged: Row[] = [
-        ...posts.map<Row>((p) => ({
-          kind: "post",
-          data: p,
-          // Drafts (no publishedAt) sort to the top
-          sortKey:
-            p.status === "draft"
-              ? Number.POSITIVE_INFINITY
-              : tsToMillis(p.publishedAt),
-        })),
-        ...quotes.map<Row>((q) => ({
-          kind: "quote",
-          data: q,
-          sortKey: tsToMillis(q.publishedAt),
-        })),
-      ].sort((a, b) => b.sortKey - a.sortKey);
-      setRows(merged);
-      setLoading(false);
-    });
+    Promise.all([getAllPosts(), getQuotes(), getAllJournal()]).then(
+      ([posts, quotes, journal]) => {
+        const merged: Row[] = [
+          ...posts.map<Row>((p) => ({
+            kind: "post",
+            data: p,
+            // Drafts (no publishedAt) sort to the top
+            sortKey:
+              p.status === "draft"
+                ? Number.POSITIVE_INFINITY
+                : tsToMillis(p.publishedAt),
+          })),
+          ...quotes.map<Row>((q) => ({
+            kind: "quote",
+            data: q,
+            sortKey: tsToMillis(q.publishedAt),
+          })),
+          ...journal.map<Row>((j) => ({
+            kind: "journal",
+            data: j,
+            sortKey:
+              j.status === "draft"
+                ? Number.POSITIVE_INFINITY
+                : tsToMillis(j.publishedAt),
+          })),
+        ].sort((a, b) => b.sortKey - a.sortKey);
+        setRows(merged);
+        setLoading(false);
+      }
+    );
   }, []);
 
   async function handleDeletePost(id: string, title: string) {
@@ -62,6 +75,14 @@ export default function AdminDashboard() {
     await deleteQuote(id);
     setRows((prev) =>
       prev.filter((r) => !(r.kind === "quote" && r.data.id === id))
+    );
+  }
+
+  async function handleDeleteJournal(id: string, title: string) {
+    if (!confirm(`Delete "${title}"?`)) return;
+    await deleteJournal(id);
+    setRows((prev) =>
+      prev.filter((r) => !(r.kind === "journal" && r.data.id === id))
     );
   }
 
@@ -99,7 +120,57 @@ export default function AdminDashboard() {
           </thead>
           <tbody>
             {rows.map((row) =>
-              row.kind === "post" ? (
+              row.kind === "journal" ? (
+                <tr key={`journal-${row.data.id}`} className="hover">
+                  <td>
+                    <span className="badge badge-sm badge-primary badge-outline">
+                      journal
+                    </span>
+                  </td>
+                  <td>
+                    <Link
+                      href={`/admin/edit-journal/${row.data.id}`}
+                      className="font-medium hover:text-primary transition-colors"
+                    >
+                      {row.data.title || "Untitled"}
+                    </Link>
+                  </td>
+                  <td>
+                    <span
+                      className={`badge badge-sm ${
+                        row.data.status === "published"
+                          ? "badge-success"
+                          : "badge-warning"
+                      }`}
+                    >
+                      {row.data.status}
+                    </span>
+                  </td>
+                  <td className="text-sm text-base-content/50 font-mono">
+                    {row.data.publishedAt?.toDate?.()
+                      ? row.data.publishedAt.toDate().toLocaleDateString()
+                      : "—"}
+                  </td>
+                  <td>
+                    <div className="flex gap-2 justify-end">
+                      <Link
+                        href={`/admin/edit-journal/${row.data.id}`}
+                        className="btn btn-ghost btn-xs"
+                      >
+                        Edit
+                      </Link>
+                      <button
+                        onClick={() =>
+                          handleDeleteJournal(row.data.id, row.data.title)
+                        }
+                        className="btn btn-ghost btn-xs text-error"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ) : row.kind === "post" ? (
                 <tr key={`post-${row.data.id}`} className="hover">
                   <td>
                     <span className="badge badge-sm badge-ghost">post</span>
