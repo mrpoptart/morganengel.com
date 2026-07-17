@@ -36,7 +36,7 @@ export default function JournalContent({
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
         </svg>
-        Back to journal
+        Back to travel journal
       </Link>
 
       <h1 className="text-3xl lg:text-4xl font-bold font-mono leading-tight mt-6">

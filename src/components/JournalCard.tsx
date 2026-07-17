@@ -69,7 +69,7 @@ export function JournalCard({
       <div className="card-body p-6">
         <div className="flex items-center gap-3 flex-wrap">
           <span className="text-xs font-mono text-base-content/40">{date}</span>
-          <span className="badge badge-xs badge-primary badge-outline">journal</span>
+          <span className="badge badge-xs badge-primary badge-outline">travel journal</span>
           {location?.label && <LocationLabel label={location.label} />}
         </div>
         <h2 className="text-xl font-bold text-base-content hover:text-primary transition-colors">

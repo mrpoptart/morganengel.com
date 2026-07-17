@@ -6,7 +6,7 @@ import { getPublishedJournalServer } from "@/lib/posts-server";
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: "Journal",
+  title: "Travel Journal",
   description: "Travel journal — entries pinned to the places they happened.",
 };
 
@@ -35,7 +35,7 @@ export default async function JournalIndexPage() {
   return (
     <div className="max-w-6xl mx-auto px-6 py-16">
       <div className="mb-8 animate-fade-in-up">
-        <h1 className="text-3xl font-mono font-bold">Journal</h1>
+        <h1 className="text-3xl font-mono font-bold">Travel Journal</h1>
         <p className="text-base-content/50 font-mono text-sm mt-2">
           Entries pinned to the places they happened.
         </p>

@@ -1,19 +1,15 @@
 import { PostCard } from "@/components/PostCard";
 import { QuoteCard } from "@/components/QuoteCard";
-import { JournalCard } from "@/components/JournalCard";
 import {
   getPublishedPostsServer,
   getQuotesServer,
-  getPublishedJournalServer,
 } from "@/lib/posts-server";
-import type { GeoLocation } from "@/types/journal";
 
 export const revalidate = 60;
 
 type FeedItem =
   | { kind: "post"; id: string; sortKey: number; slug: string; title: string; excerpt: string; date: string; tags: string[] }
-  | { kind: "quote"; id: string; sortKey: number; body: string; author: string; date: string }
-  | { kind: "journal"; id: string; sortKey: number; slug: string; title: string; excerpt: string; coverImage?: string; location: GeoLocation | null; date: string; tags: string[] };
+  | { kind: "quote"; id: string; sortKey: number; body: string; author: string; date: string };
 
 function formatDate(ts: FirebaseFirestore.Timestamp | null): string {
   if (!ts) return "";
@@ -33,10 +29,9 @@ function formatMonthYear(ts: FirebaseFirestore.Timestamp | null): string {
 }
 
 export default async function Home() {
-  const [posts, quotes, journal] = await Promise.all([
+  const [posts, quotes] = await Promise.all([
     getPublishedPostsServer(),
     getQuotesServer(),
-    getPublishedJournalServer(),
   ]);
 
   const items: FeedItem[] = [
@@ -57,18 +52,6 @@ export default async function Home() {
       body: q.body,
       author: q.author,
       date: formatMonthYear(q.publishedAt),
-    })),
-    ...journal.map<FeedItem>((j) => ({
-      kind: "journal",
-      id: j.id,
-      sortKey: j.publishedAt?.toMillis() ?? 0,
-      slug: j.slug,
-      title: j.title,
-      excerpt: j.excerpt,
-      coverImage: j.coverImage,
-      location: j.location,
-      date: formatDate(j.publishedAt),
-      tags: j.tags,
     })),
   ].sort((a, b) => b.sortKey - a.sortKey);
 
@@ -97,19 +80,6 @@ export default async function Home() {
                 slug={item.slug}
                 title={item.title}
                 excerpt={item.excerpt}
-                date={item.date}
-                tags={item.tags}
-                index={i}
-                total={items.length}
-              />
-            ) : item.kind === "journal" ? (
-              <JournalCard
-                key={`journal-${item.id}`}
-                slug={item.slug}
-                title={item.title}
-                excerpt={item.excerpt}
-                coverImage={item.coverImage}
-                location={item.location}
                 date={item.date}
                 tags={item.tags}
                 index={i}
