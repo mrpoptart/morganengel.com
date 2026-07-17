@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 
 function ChevronLeft() {
   return (
@@ -68,13 +69,15 @@ export function Gallery({ images }: { images: string[] }) {
         ))}
       </div>
 
-      {open !== null && (
-        <div
-          className="fixed inset-0 z-[1000] bg-black/90 backdrop-blur-sm flex items-center justify-center animate-fade-in-up"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Photo viewer"
-        >
+      {open !== null &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[1000] bg-black/90 backdrop-blur-sm flex items-center justify-center animate-fade-in-up"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Photo viewer"
+          >
           <button
             type="button"
             onClick={close}
@@ -124,8 +127,9 @@ export function Gallery({ images }: { images: string[] }) {
             alt={`Photo ${open + 1}`}
             className="max-h-[90vh] max-w-[92vw] object-contain select-none pointer-events-none"
           />
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </>
   );
 }
