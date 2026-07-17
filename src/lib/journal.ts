@@ -89,6 +89,7 @@ export async function createJournal(data: {
   status: "draft" | "published";
   location?: GeoLocation | null;
   coverImage?: string;
+  gallery?: string[];
   publishedAt?: Date;
 }): Promise<string> {
   const now = Timestamp.now();
@@ -106,6 +107,7 @@ export async function createJournal(data: {
     content: data.content,
     excerpt: generateExcerpt(data.content),
     location: data.location ?? null,
+    gallery: data.gallery ?? [],
     tags: data.tags,
     status: data.status,
     publishedAt,
@@ -128,6 +130,7 @@ export async function updateJournal(
     slug: string;
     location: GeoLocation | null;
     coverImage: string | null;
+    gallery: string[];
     publishedAt: Date;
   }>
 ): Promise<void> {
@@ -141,6 +144,7 @@ export async function updateJournal(
   if (data.status !== undefined) updates.status = data.status;
   if (data.location !== undefined) updates.location = data.location;
   if (data.coverImage !== undefined) updates.coverImage = data.coverImage ?? null;
+  if (data.gallery !== undefined) updates.gallery = data.gallery;
 
   if (data.content !== undefined) {
     updates.content = data.content;

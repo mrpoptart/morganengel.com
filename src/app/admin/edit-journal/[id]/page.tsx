@@ -12,6 +12,7 @@ import { uploadImage } from "@/lib/upload";
 import { Editor } from "@/components/Editor";
 import { TagsInput } from "@/components/TagsInput";
 import { LocationPicker } from "@/components/LocationPicker";
+import { GalleryInput } from "@/components/GalleryInput";
 import type { JournalEntry, GeoLocation } from "@/types/journal";
 
 export default function EditJournalPage() {
@@ -28,6 +29,7 @@ export default function EditJournalPage() {
   const [coverImage, setCoverImage] = useState<string | null>(null);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [location, setLocation] = useState<GeoLocation | null>(null);
+  const [gallery, setGallery] = useState<string[]>([]);
   const [photoNote, setPhotoNote] = useState<string | null>(null);
   const [editingSlug, setEditingSlug] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -52,6 +54,7 @@ export default function EditJournalPage() {
       setTags(e.tags.join(", "));
       setCoverImage(e.coverImage ?? null);
       setLocation(e.location ?? null);
+      setGallery(e.gallery ?? []);
       if (e.publishedAt) {
         setPublishDate(e.publishedAt.toDate().toISOString().slice(0, 16));
       }
@@ -76,16 +79,17 @@ export default function EditJournalPage() {
         tags: tags.split(",").map((t) => t.trim().toLowerCase()).filter(Boolean),
         location,
         coverImage,
+        gallery,
       });
       setAutoSaved(true);
     }, 2000);
-  }, [entryId, entry?.status, title, slug, tags, location, coverImage]);
+  }, [entryId, entry?.status, title, slug, tags, location, coverImage, gallery]);
 
   // Autosave on field changes (drafts only).
   useEffect(() => {
     if (!loadedRef.current) return;
     triggerAutosave();
-  }, [title, tags, location, coverImage, triggerAutosave]);
+  }, [title, tags, location, coverImage, gallery, triggerAutosave]);
 
   useEffect(() => {
     return () => {
@@ -130,6 +134,7 @@ export default function EditJournalPage() {
           .filter(Boolean),
         location,
         coverImage,
+        gallery,
         ...(status ? { status } : {}),
         ...(publishDate ? { publishedAt: new Date(publishDate) } : {}),
       });
@@ -255,6 +260,13 @@ export default function EditJournalPage() {
       </div>
 
       <Editor initialHTML={entry.content} onUpdate={handleEditorUpdate} />
+
+      <div className="mt-6">
+        <label className="text-xs text-base-content/40 font-mono block mb-2">
+          Gallery
+        </label>
+        <GalleryInput value={gallery} onChange={setGallery} />
+      </div>
 
       <div className="flex gap-3 mt-6 justify-between">
         <div className="flex items-center gap-3">

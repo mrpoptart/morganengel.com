@@ -14,6 +14,7 @@ export interface JournalEntry {
   content: string;
   excerpt: string;
   coverImage?: string;
+  gallery: string[];
   location: GeoLocation | null;
   tags: string[];
   status: "draft" | "published";

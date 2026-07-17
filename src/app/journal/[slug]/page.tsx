@@ -62,6 +62,7 @@ export default async function JournalEntryPage({ params }: Props) {
       title={entry.title}
       content={entry.content}
       coverImage={entry.coverImage}
+      gallery={entry.gallery ?? []}
       location={entry.location}
       date={formatDate(entry.publishedAt)}
       tags={entry.tags}

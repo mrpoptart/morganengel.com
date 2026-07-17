@@ -37,6 +37,7 @@ export interface ServerJournalEntry {
   content: string;
   excerpt: string;
   coverImage?: string;
+  gallery?: string[];
   location: ServerGeoLocation | null;
   tags: string[];
   status: "draft" | "published";

@@ -7,6 +7,7 @@ import { uploadImage } from "@/lib/upload";
 import { Editor } from "@/components/Editor";
 import { TagsInput } from "@/components/TagsInput";
 import { LocationPicker } from "@/components/LocationPicker";
+import { GalleryInput } from "@/components/GalleryInput";
 import type { GeoLocation } from "@/types/journal";
 import type { JSONContent } from "novel";
 
@@ -18,6 +19,7 @@ export default function NewJournalPage() {
   const [coverImage, setCoverImage] = useState<string | null>(null);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [location, setLocation] = useState<GeoLocation | null>(null);
+  const [gallery, setGallery] = useState<string[]>([]);
   const [photoNote, setPhotoNote] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const htmlRef = useRef("");
@@ -54,6 +56,7 @@ export default function NewJournalPage() {
           .filter(Boolean),
         status,
         location,
+        gallery,
         ...(coverImage ? { coverImage } : {}),
         ...(publishDate ? { publishedAt: new Date(publishDate) } : {}),
       });
@@ -142,6 +145,13 @@ export default function NewJournalPage() {
       </div>
 
       <Editor onUpdate={handleEditorUpdate} />
+
+      <div className="mt-6">
+        <label className="text-xs text-base-content/40 font-mono block mb-2">
+          Gallery
+        </label>
+        <GalleryInput value={gallery} onChange={setGallery} />
+      </div>
 
       <div className="flex gap-3 mt-6 justify-end">
         <button

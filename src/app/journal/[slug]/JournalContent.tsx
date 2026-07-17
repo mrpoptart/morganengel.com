@@ -1,6 +1,7 @@
 import Link from "next/link";
 import AdminEditLink from "@/app/posts/[slug]/AdminEditLink";
 import { LocationMap } from "@/components/LocationMap";
+import { Gallery } from "@/components/Gallery";
 import type { GeoLocation } from "@/types/journal";
 
 interface JournalContentProps {
@@ -8,6 +9,7 @@ interface JournalContentProps {
   title: string;
   content: string;
   coverImage?: string;
+  gallery: string[];
   location: GeoLocation | null;
   date: string;
   tags: string[];
@@ -19,6 +21,7 @@ export default function JournalContent({
   title,
   content,
   coverImage,
+  gallery,
   location,
   date,
   tags,
@@ -91,6 +94,8 @@ export default function JournalContent({
         className="prose prose-invert prose-lg max-w-none prose-blog"
         dangerouslySetInnerHTML={{ __html: content }}
       />
+
+      <Gallery images={gallery} />
 
       {location && (
         <div className="mt-12">
