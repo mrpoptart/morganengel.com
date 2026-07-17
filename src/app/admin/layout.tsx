@@ -34,6 +34,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           <Link href="/admin/new-quote" className="btn btn-outline btn-sm">
             New Quote
           </Link>
+          <Link href="/admin/new-trip" className="btn btn-outline btn-sm">
+            New Trip
+          </Link>
           <Link href="/admin/new-journal" className="btn btn-outline btn-sm">
             New Travel Journal
           </Link>

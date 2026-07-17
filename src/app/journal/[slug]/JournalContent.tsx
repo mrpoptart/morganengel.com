@@ -15,6 +15,8 @@ interface JournalContentProps {
   tags: string[];
   readingTime: string;
   author?: string;
+  tripTitle?: string;
+  tripSlug?: string;
 }
 
 export default function JournalContent({
@@ -28,17 +30,21 @@ export default function JournalContent({
   tags,
   readingTime,
   author,
+  tripTitle,
+  tripSlug,
 }: JournalContentProps) {
+  const backHref = tripSlug ? `/trips/${tripSlug}` : "/trips";
+  const backLabel = tripTitle ? `Back to ${tripTitle}` : "All trips";
   return (
     <article className="max-w-3xl mx-auto px-6 py-16 animate-fade-in-up">
       <Link
-        href="/journal"
+        href={backHref}
         className="text-sm font-mono text-base-content/40 hover:text-primary mb-8 inline-flex items-center gap-1 transition-colors"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
         </svg>
-        Back to travel journal
+        {backLabel}
       </Link>
 
       <h1 className="text-3xl lg:text-4xl font-bold font-mono leading-tight mt-6">

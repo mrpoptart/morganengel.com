@@ -1,47 +1,28 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createJournal } from "@/lib/journal";
+import { createTrip } from "@/lib/trips";
 import { uploadImage } from "@/lib/upload";
-import { Editor } from "@/components/Editor";
-import { TagsInput } from "@/components/TagsInput";
-import { LocationPicker } from "@/components/LocationPicker";
-import { GalleryInput } from "@/components/GalleryInput";
-import { TripSelect } from "@/components/TripSelect";
 import { useAuth } from "@/components/AuthProvider";
-import type { GeoLocation } from "@/types/journal";
-import type { JSONContent } from "novel";
 
-export default function NewJournalPage() {
+export default function NewTripPage() {
   const router = useRouter();
   const { user } = useAuth();
   const [title, setTitle] = useState("");
-  const [tags, setTags] = useState("");
-  const [publishDate, setPublishDate] = useState("");
+  const [description, setDescription] = useState("");
   const [coverImage, setCoverImage] = useState<string | null>(null);
   const [uploadingCover, setUploadingCover] = useState(false);
-  const [location, setLocation] = useState<GeoLocation | null>(null);
-  const [gallery, setGallery] = useState<string[]>([]);
-  const [tripId, setTripId] = useState("");
-  const [photoNote, setPhotoNote] = useState<string | null>(null);
+  const [publishDate, setPublishDate] = useState("");
   const [saving, setSaving] = useState(false);
-  const htmlRef = useRef("");
-
-  const handleEditorUpdate = useCallback((_json: JSONContent, html: string) => {
-    htmlRef.current = html;
-  }, []);
 
   async function handleCoverFile(file: File | undefined) {
     if (!file) return;
     setUploadingCover(true);
-    setPhotoNote(null);
     try {
-      const url = await uploadImage(file);
-      setCoverImage(url);
+      setCoverImage(await uploadImage(file));
     } catch (error) {
       console.error("Cover upload failed:", error);
-      setPhotoNote("Couldn't upload that photo.");
     } finally {
       setUploadingCover(false);
     }
@@ -51,17 +32,10 @@ export default function NewJournalPage() {
     if (!title.trim()) return;
     setSaving(true);
     try {
-      await createJournal({
+      await createTrip({
         title: title.trim(),
-        content: htmlRef.current,
-        tags: tags
-          .split(",")
-          .map((t) => t.trim().toLowerCase())
-          .filter(Boolean),
+        description: description.trim(),
         status,
-        location,
-        gallery,
-        tripId: tripId || null,
         ...(coverImage ? { coverImage } : {}),
         ...(user?.displayName || user?.email
           ? { author: user.displayName ?? user.email ?? undefined }
@@ -70,7 +44,7 @@ export default function NewJournalPage() {
       });
       router.push("/admin");
     } catch (error) {
-      console.error("Failed to save:", error);
+      console.error("Failed to save trip:", error);
     } finally {
       setSaving(false);
     }
@@ -80,16 +54,18 @@ export default function NewJournalPage() {
     <div className="animate-fade-in-up">
       <input
         type="text"
-        placeholder="Journal title..."
+        placeholder="Trip name..."
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         className="input input-ghost text-3xl font-mono font-bold w-full mb-4 px-0 focus:outline-none"
       />
 
-      <TagsInput
-        value={tags}
-        onChange={setTags}
-        className="input input-ghost text-sm font-mono w-full mb-4 px-0 text-base-content/50 focus:outline-none"
+      <textarea
+        placeholder="A short description of the trip..."
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+        rows={4}
+        className="textarea textarea-ghost text-base w-full mb-4 px-0 focus:outline-none resize-y"
       />
 
       <div className="flex items-center gap-2 mb-6">
@@ -100,11 +76,6 @@ export default function NewJournalPage() {
           onChange={(e) => setPublishDate(e.target.value)}
           className="input input-ghost input-sm font-mono text-sm text-base-content/50 focus:outline-none"
         />
-      </div>
-
-      <div className="flex items-center gap-2 mb-6">
-        <label className="text-xs text-base-content/40 font-mono">Trip:</label>
-        <TripSelect value={tripId} onChange={setTripId} />
       </div>
 
       <div className="mb-6">
@@ -121,10 +92,7 @@ export default function NewJournalPage() {
             />
             <button
               type="button"
-              onClick={() => {
-                setCoverImage(null);
-                setPhotoNote(null);
-              }}
+              onClick={() => setCoverImage(null)}
               className="btn btn-xs btn-error absolute top-2 right-2"
             >
               Remove
@@ -145,25 +113,6 @@ export default function NewJournalPage() {
             />
           </label>
         )}
-        {photoNote && (
-          <p className="text-xs text-base-content/50 font-mono mt-2">{photoNote}</p>
-        )}
-      </div>
-
-      <div className="mb-6">
-        <label className="text-xs text-base-content/40 font-mono block mb-2">
-          Location
-        </label>
-        <LocationPicker value={location} onChange={setLocation} />
-      </div>
-
-      <Editor onUpdate={handleEditorUpdate} />
-
-      <div className="mt-6">
-        <label className="text-xs text-base-content/40 font-mono block mb-2">
-          Gallery
-        </label>
-        <GalleryInput value={gallery} onChange={setGallery} />
       </div>
 
       <div className="flex gap-3 mt-6 justify-end">
@@ -172,22 +121,14 @@ export default function NewJournalPage() {
           disabled={saving || !title.trim()}
           className="btn btn-outline btn-sm"
         >
-          {saving ? (
-            <span className="loading loading-spinner loading-xs" />
-          ) : (
-            "Save Draft"
-          )}
+          {saving ? <span className="loading loading-spinner loading-xs" /> : "Save Draft"}
         </button>
         <button
           onClick={() => save("published")}
           disabled={saving || !title.trim()}
           className="btn btn-primary btn-sm"
         >
-          {saving ? (
-            <span className="loading loading-spinner loading-xs" />
-          ) : (
-            "Publish"
-          )}
+          {saving ? <span className="loading loading-spinner loading-xs" /> : "Publish"}
         </button>
       </div>
     </div>

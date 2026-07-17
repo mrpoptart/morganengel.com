@@ -5,15 +5,18 @@ import Link from "next/link";
 import { getAllPosts, deletePost } from "@/lib/posts";
 import { getQuotes, deleteQuote } from "@/lib/quotes";
 import { getAllJournal, deleteJournal } from "@/lib/journal";
+import { getAllTrips, deleteTrip } from "@/lib/trips";
 import type { Post } from "@/types/post";
 import type { Quote } from "@/types/quote";
 import type { JournalEntry } from "@/types/journal";
+import type { Trip } from "@/types/trip";
 import type { Timestamp } from "firebase/firestore";
 
 type Row =
   | { kind: "post"; data: Post; sortKey: number }
   | { kind: "quote"; data: Quote; sortKey: number }
-  | { kind: "journal"; data: JournalEntry; sortKey: number };
+  | { kind: "journal"; data: JournalEntry; sortKey: number }
+  | { kind: "trip"; data: Trip; sortKey: number };
 
 function tsToMillis(ts: Timestamp | null | undefined): number {
   return ts?.toMillis?.() ?? 0;
@@ -30,8 +33,8 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([getAllPosts(), getQuotes(), getAllJournal()]).then(
-      ([posts, quotes, journal]) => {
+    Promise.all([getAllPosts(), getQuotes(), getAllJournal(), getAllTrips()]).then(
+      ([posts, quotes, journal, trips]) => {
         const merged: Row[] = [
           ...posts.map<Row>((p) => ({
             kind: "post",
@@ -54,6 +57,14 @@ export default function AdminDashboard() {
               j.status === "draft"
                 ? Number.POSITIVE_INFINITY
                 : tsToMillis(j.publishedAt),
+          })),
+          ...trips.map<Row>((t) => ({
+            kind: "trip",
+            data: t,
+            sortKey:
+              t.status === "draft"
+                ? Number.POSITIVE_INFINITY
+                : tsToMillis(t.publishedAt),
           })),
         ].sort((a, b) => b.sortKey - a.sortKey);
         setRows(merged);
@@ -83,6 +94,14 @@ export default function AdminDashboard() {
     await deleteJournal(id);
     setRows((prev) =>
       prev.filter((r) => !(r.kind === "journal" && r.data.id === id))
+    );
+  }
+
+  async function handleDeleteTrip(id: string, title: string) {
+    if (!confirm(`Delete "${title}"? Entries in it will be kept.`)) return;
+    await deleteTrip(id);
+    setRows((prev) =>
+      prev.filter((r) => !(r.kind === "trip" && r.data.id === id))
     );
   }
 
@@ -120,7 +139,57 @@ export default function AdminDashboard() {
           </thead>
           <tbody>
             {rows.map((row) =>
-              row.kind === "journal" ? (
+              row.kind === "trip" ? (
+                <tr key={`trip-${row.data.id}`} className="hover">
+                  <td>
+                    <span className="badge badge-sm badge-secondary badge-outline">
+                      trip
+                    </span>
+                  </td>
+                  <td>
+                    <Link
+                      href={`/admin/edit-trip/${row.data.id}`}
+                      className="font-medium hover:text-primary transition-colors"
+                    >
+                      {row.data.title || "Untitled"}
+                    </Link>
+                  </td>
+                  <td>
+                    <span
+                      className={`badge badge-sm ${
+                        row.data.status === "published"
+                          ? "badge-success"
+                          : "badge-warning"
+                      }`}
+                    >
+                      {row.data.status}
+                    </span>
+                  </td>
+                  <td className="text-sm text-base-content/50 font-mono">
+                    {row.data.publishedAt?.toDate?.()
+                      ? row.data.publishedAt.toDate().toLocaleDateString()
+                      : "—"}
+                  </td>
+                  <td>
+                    <div className="flex gap-2 justify-end">
+                      <Link
+                        href={`/admin/edit-trip/${row.data.id}`}
+                        className="btn btn-ghost btn-xs"
+                      >
+                        Edit
+                      </Link>
+                      <button
+                        onClick={() =>
+                          handleDeleteTrip(row.data.id, row.data.title)
+                        }
+                        className="btn btn-ghost btn-xs text-error"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ) : row.kind === "journal" ? (
                 <tr key={`journal-${row.data.id}`} className="hover">
                   <td>
                     <span className="badge badge-sm badge-primary badge-outline">

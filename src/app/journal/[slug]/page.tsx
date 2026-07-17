@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { getJournalBySlugServer } from "@/lib/posts-server";
+import { getJournalBySlugServer, getTripByIdServer } from "@/lib/posts-server";
 import JournalContent from "./JournalContent";
 
 export const revalidate = 60;
@@ -56,6 +56,9 @@ export default async function JournalEntryPage({ params }: Props) {
   const entry = await getJournalBySlugServer(slug);
   if (!entry || entry.status !== "published") notFound();
 
+  const trip = entry.tripId ? await getTripByIdServer(entry.tripId) : null;
+  const publishedTrip = trip && trip.status === "published" ? trip : null;
+
   return (
     <JournalContent
       slug={entry.slug}
@@ -68,6 +71,8 @@ export default async function JournalEntryPage({ params }: Props) {
       tags={entry.tags}
       readingTime={readingTime(entry.content)}
       author={entry.author}
+      tripTitle={publishedTrip?.title}
+      tripSlug={publishedTrip?.slug}
     />
   );
 }

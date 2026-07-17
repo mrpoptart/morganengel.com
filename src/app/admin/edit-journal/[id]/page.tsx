@@ -13,6 +13,7 @@ import { Editor } from "@/components/Editor";
 import { TagsInput } from "@/components/TagsInput";
 import { LocationPicker } from "@/components/LocationPicker";
 import { GalleryInput } from "@/components/GalleryInput";
+import { TripSelect } from "@/components/TripSelect";
 import type { JournalEntry, GeoLocation } from "@/types/journal";
 
 export default function EditJournalPage() {
@@ -30,6 +31,7 @@ export default function EditJournalPage() {
   const [uploadingCover, setUploadingCover] = useState(false);
   const [location, setLocation] = useState<GeoLocation | null>(null);
   const [gallery, setGallery] = useState<string[]>([]);
+  const [tripId, setTripId] = useState("");
   const [photoNote, setPhotoNote] = useState<string | null>(null);
   const [editingSlug, setEditingSlug] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -55,6 +57,7 @@ export default function EditJournalPage() {
       setCoverImage(e.coverImage ?? null);
       setLocation(e.location ?? null);
       setGallery(e.gallery ?? []);
+      setTripId(e.tripId ?? "");
       if (e.publishedAt) {
         setPublishDate(e.publishedAt.toDate().toISOString().slice(0, 16));
       }
@@ -80,16 +83,17 @@ export default function EditJournalPage() {
         location,
         coverImage,
         gallery,
+        tripId: tripId || null,
       });
       setAutoSaved(true);
     }, 2000);
-  }, [entryId, entry?.status, title, slug, tags, location, coverImage, gallery]);
+  }, [entryId, entry?.status, title, slug, tags, location, coverImage, gallery, tripId]);
 
   // Autosave on field changes (drafts only).
   useEffect(() => {
     if (!loadedRef.current) return;
     triggerAutosave();
-  }, [title, tags, location, coverImage, gallery, triggerAutosave]);
+  }, [title, tags, location, coverImage, gallery, tripId, triggerAutosave]);
 
   useEffect(() => {
     return () => {
@@ -135,6 +139,7 @@ export default function EditJournalPage() {
         location,
         coverImage,
         gallery,
+        tripId: tripId || null,
         ...(status ? { status } : {}),
         ...(publishDate ? { publishedAt: new Date(publishDate) } : {}),
       });
@@ -207,6 +212,11 @@ export default function EditJournalPage() {
           onChange={(e) => setPublishDate(e.target.value)}
           className="input input-ghost input-sm font-mono text-sm text-base-content/50 focus:outline-none"
         />
+      </div>
+
+      <div className="flex items-center gap-2 mb-6">
+        <label className="text-xs text-base-content/40 font-mono">Trip:</label>
+        <TripSelect value={tripId} onChange={setTripId} />
       </div>
 
       <div className="mb-6">

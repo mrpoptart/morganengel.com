@@ -98,6 +98,7 @@ export async function createJournal(data: {
   coverImage?: string;
   gallery?: string[];
   author?: string;
+  tripId?: string | null;
   publishedAt?: Date;
 }): Promise<string> {
   const now = Timestamp.now();
@@ -116,6 +117,7 @@ export async function createJournal(data: {
     excerpt: generateExcerpt(data.content),
     location: data.location ?? null,
     gallery: data.gallery ?? [],
+    tripId: data.tripId ?? null,
     tags: data.tags,
     status: data.status,
     publishedAt,
@@ -140,6 +142,7 @@ export async function updateJournal(
     location: GeoLocation | null;
     coverImage: string | null;
     gallery: string[];
+    tripId: string | null;
     publishedAt: Date;
   }>
 ): Promise<void> {
@@ -154,6 +157,7 @@ export async function updateJournal(
   if (data.location !== undefined) updates.location = data.location;
   if (data.coverImage !== undefined) updates.coverImage = data.coverImage ?? null;
   if (data.gallery !== undefined) updates.gallery = data.gallery;
+  if (data.tripId !== undefined) updates.tripId = data.tripId ?? null;
 
   if (data.content !== undefined) {
     updates.content = data.content;

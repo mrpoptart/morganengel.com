@@ -15,6 +15,7 @@ export interface JournalEntry {
   excerpt: string;
   coverImage?: string;
   author?: string;
+  tripId?: string | null;
   gallery: string[];
   location: GeoLocation | null;
   tags: string[];
