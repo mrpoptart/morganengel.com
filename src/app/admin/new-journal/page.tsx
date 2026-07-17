@@ -66,11 +66,11 @@ export default function NewJournalPage() {
         );
       } else if (info.hasMetadata) {
         setPhotoNote(
-          `This photo has metadata but no GPS — your Photos app likely removed the location when sharing. Try picking the original from Files (DCIM/Camera), or set it manually below. [tags found: ${info.metaKeys.join(", ")}]`
+          "This photo's metadata has no GPS coordinates — set the location manually below."
         );
       } else {
         setPhotoNote(
-          "No metadata in this image — it looks like a stripped copy. Try picking the original from Files (DCIM/Camera), or set it manually below."
+          "No location data in this image — set the location manually below."
         );
       }
     } catch (error) {
