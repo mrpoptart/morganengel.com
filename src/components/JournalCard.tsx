@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { LocationMap } from "@/components/LocationMap";
 import type { GeoLocation } from "@/types/journal";
 
 interface JournalCardProps {
@@ -46,9 +45,6 @@ export function JournalCard({
   index = 0,
   total = 1,
 }: JournalCardProps) {
-  const showMapTop = !coverImage && location;
-  const showMapBottom = coverImage && location;
-
   return (
     <Link
       href={`/journal/${slug}`}
@@ -58,16 +54,6 @@ export function JournalCard({
       {coverImage && (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={coverImage} alt={title} className="h-44 w-full object-cover" />
-      )}
-      {showMapTop && (
-        <div className="pointer-events-none">
-          <LocationMap
-            lat={location.lat}
-            lng={location.lng}
-            zoom={9}
-            className="h-40 w-full"
-          />
-        </div>
       )}
 
       <div className="card-body p-6">
@@ -102,17 +88,6 @@ export function JournalCard({
           ))}
         </div>
       </div>
-
-      {showMapBottom && (
-        <div className="pointer-events-none">
-          <LocationMap
-            lat={location.lat}
-            lng={location.lng}
-            zoom={9}
-            className="h-32 w-full"
-          />
-        </div>
-      )}
     </Link>
   );
 }
