@@ -122,20 +122,39 @@ export function LocationPicker({ value, onChange }: LocationPickerProps) {
       return;
     }
     setLocating(true);
+
+    const onSuccess = async (pos: GeolocationPosition) => {
+      setLocating(false);
+      await setFromCoords(pos.coords.latitude, pos.coords.longitude);
+    };
+
+    const report = (err: GeolocationPositionError) => {
+      setLocating(false);
+      if (err.code === err.PERMISSION_DENIED) {
+        setError("Location permission denied — enable it for this site and retry.");
+      } else if (err.code === err.TIMEOUT) {
+        setError("Timed out getting your location. Try again, or search / tap the map.");
+      } else {
+        setError("Couldn't get your location. Try again, or search / tap the map.");
+      }
+    };
+
+    // High-accuracy fixes (GPS) often time out indoors or on laptops. Try that
+    // first, but fall back to a low-accuracy / cached fix before giving up.
     navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        setLocating(false);
-        await setFromCoords(pos.coords.latitude, pos.coords.longitude);
-      },
-      (err) => {
-        setLocating(false);
-        setError(
-          err.code === err.PERMISSION_DENIED
-            ? "Location permission denied."
-            : "Couldn't get your location."
+      onSuccess,
+      (firstErr) => {
+        if (firstErr.code === firstErr.PERMISSION_DENIED) {
+          report(firstErr);
+          return;
+        }
+        navigator.geolocation.getCurrentPosition(
+          onSuccess,
+          () => report(firstErr),
+          { enableHighAccuracy: false, timeout: 15000, maximumAge: 600000 }
         );
       },
-      { enableHighAccuracy: true, timeout: 10000 }
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
     );
   }
 
