@@ -92,15 +92,24 @@ export async function inspectPhotoLocation(
       return { gps: null, hasMetadata: false, unreadable: true, metaKeys: [], debug: "" };
     }
   } else {
-    bytes = input;
+    // Read the whole file into memory. Passing the File directly makes exifr
+    // use a chunked reader that stops short of GPS values sitting deep behind
+    // big ICC profiles / maker notes (they come back null). A full buffer lets
+    // it resolve every offset.
+    bytes = await input.arrayBuffer();
   }
 
   // Dedicated GPS parse with translation OFF keeps GPSLatitude as a raw
   // [deg,min,sec] array (translation would stringify it) and still yields
-  // exifr's computed decimal latitude/longitude.
-  const coord = await parse(bytes, { gps: true, translateValues: false });
+  // exifr's computed decimal latitude/longitude. chunked:false forces the
+  // whole buffer to be scanned.
+  const coord = await parse(bytes, {
+    gps: true,
+    translateValues: false,
+    chunked: false,
+  });
   // Full parse for the diagnostic tag list.
-  const meta = await parse(bytes, true);
+  const meta = await parse(bytes, { mergeOutput: true, chunked: false });
 
   const src = coord ?? meta;
   const gps = pickGps(coord) ?? pickGps(meta);
