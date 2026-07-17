@@ -141,11 +141,11 @@ export default function EditJournalPage() {
         );
       } else if (info.hasMetadata) {
         setPhotoNote(
-          `This photo's metadata has no GPS coordinates — set the location manually below. [${info.debug}]`
+          "No GPS in this photo — location is often removed when a photo is shared from Google Photos. Upload the original from Files (DCIM/Camera), or set the location with the map below."
         );
       } else {
         setPhotoNote(
-          "No location data in this image — set the location manually below."
+          "No location data in this image — set the location with the map below."
         );
       }
     } catch (error) {
