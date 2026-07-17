@@ -30,6 +30,7 @@ export default function EditJournalPage() {
   const [coverImage, setCoverImage] = useState<string | null>(null);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [location, setLocation] = useState<GeoLocation | null>(null);
+  const [photoNote, setPhotoNote] = useState<string | null>(null);
   const [editingSlug, setEditingSlug] = useState(false);
   const [saving, setSaving] = useState(false);
   const [autoSaved, setAutoSaved] = useState(false);
@@ -105,16 +106,26 @@ export default function EditJournalPage() {
   async function handleCoverFile(file: File | undefined) {
     if (!file) return;
     setUploadingCover(true);
+    setPhotoNote(null);
     try {
+      // Pull GPS from the photo's EXIF and pin the map to it.
       const gps = await extractGpsFromImage(file);
-      if (gps && !location) {
+      if (gps) {
         const label = await reverseGeocode(gps.lat, gps.lng);
         setLocation({ ...gps, label: label ?? undefined });
+        setPhotoNote(
+          label ? `📍 Location set from photo: ${label}` : "📍 Location set from photo."
+        );
+      } else {
+        setPhotoNote(
+          "This photo has no location data — set the location manually below."
+        );
       }
       const url = await uploadImage(file);
       setCoverImage(url);
     } catch (error) {
       console.error("Cover upload failed:", error);
+      setPhotoNote("Couldn't process that photo.");
     } finally {
       setUploadingCover(false);
     }
@@ -242,6 +253,9 @@ export default function EditJournalPage() {
               onChange={(e) => handleCoverFile(e.target.files?.[0])}
             />
           </label>
+        )}
+        {photoNote && (
+          <p className="text-xs text-base-content/50 font-mono mt-2">{photoNote}</p>
         )}
       </div>
 
