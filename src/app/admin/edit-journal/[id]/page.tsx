@@ -306,6 +306,25 @@ export default function EditJournalPage() {
             Use this photo&apos;s location
           </button>
         )}
+        {coverImage && (
+          <div className="mt-2 space-y-1">
+            <button
+              type="button"
+              onClick={() =>
+                navigator.clipboard?.writeText(coverImage).then(
+                  () => setPhotoNote("Photo URL copied — paste it to Claude."),
+                  () => setPhotoNote("Couldn't copy — long-press the link below.")
+                )
+              }
+              className="btn btn-ghost btn-xs"
+            >
+              Copy photo URL
+            </button>
+            <p className="text-[10px] text-base-content/40 font-mono break-all select-all">
+              {coverImage}
+            </p>
+          </div>
+        )}
         {photoNote && (
           <p className="text-xs text-base-content/50 font-mono mt-2">{photoNote}</p>
         )}
