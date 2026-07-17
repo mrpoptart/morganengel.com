@@ -39,7 +39,14 @@ function decodeHtmlEntities(str: string): string {
 }
 
 function generateExcerpt(html: string, maxLength = 160): string {
-  const text = decodeHtmlEntities(html.replace(/<[^>]+>/g, "")).trim();
+  // Turn line breaks and block boundaries into spaces so adjacent
+  // paragraphs don't run together; inline tags are stripped without a space.
+  const withBreaks = html
+    .replace(/<br\s*\/?>/gi, " ")
+    .replace(/<\/(p|div|h[1-6]|li|blockquote|figcaption|tr|section)>/gi, " ");
+  const text = decodeHtmlEntities(withBreaks.replace(/<[^>]+>/g, ""))
+    .replace(/\s+/g, " ")
+    .trim();
   if (text.length <= maxLength) return text;
   return text.slice(0, maxLength).replace(/\s+\S*$/, "") + "...";
 }
