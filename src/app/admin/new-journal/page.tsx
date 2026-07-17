@@ -66,7 +66,7 @@ export default function NewJournalPage() {
         );
       } else if (info.hasMetadata) {
         setPhotoNote(
-          "This photo's metadata has no GPS coordinates — set the location manually below."
+          `This photo's metadata has no GPS coordinates — set the location manually below. [${info.debug}]`
         );
       } else {
         setPhotoNote(

@@ -47,15 +47,16 @@ function pickGps(meta: Record<string, unknown> | undefined): Gps | null {
   return { lat, lng };
 }
 
-async function parseFull(
-  bytes: File | ArrayBuffer
-): Promise<Record<string, unknown> | undefined> {
-  // A full parse reads the whole file, so GPS is found even when it sits past
-  // the first chunk (behind big ICC profiles / XMP / maker notes). The
-  // `exifr.gps()` shortcut only reads the head and misses those.
-  return (await exifr.parse(bytes, true).catch(() => undefined)) as
-    | Record<string, unknown>
-    | undefined;
+type Meta = Record<string, unknown> | undefined;
+
+async function parse(bytes: File | ArrayBuffer, options: unknown): Promise<Meta> {
+  // A full/dedicated parse reads the whole file, so GPS is found even when it
+  // sits past the first chunk (behind big ICC profiles / XMP / maker notes).
+  // The `exifr.gps()` shortcut only reads the head and misses those.
+  return (await exifr
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .parse(bytes, options as any)
+    .catch(() => undefined)) as Meta;
 }
 
 export interface PhotoLocationInfo {
@@ -66,6 +67,8 @@ export interface PhotoLocationInfo {
   unreadable: boolean;
   /** Names of the EXIF tags found — for diagnosing missing GPS. */
   metaKeys: string[];
+  /** Raw GPS field values — shown on screen to diagnose extraction. */
+  debug: string;
 }
 
 /**
@@ -83,22 +86,38 @@ export async function inspectPhotoLocation(
     try {
       const res = await fetch(input);
       if (!res.ok)
-        return { gps: null, hasMetadata: false, unreadable: true, metaKeys: [] };
+        return { gps: null, hasMetadata: false, unreadable: true, metaKeys: [], debug: "" };
       bytes = await res.arrayBuffer();
     } catch {
-      return { gps: null, hasMetadata: false, unreadable: true, metaKeys: [] };
+      return { gps: null, hasMetadata: false, unreadable: true, metaKeys: [], debug: "" };
     }
   } else {
     bytes = input;
   }
 
-  const meta = await parseFull(bytes);
-  const metaKeys = meta ? Object.keys(meta) : [];
+  // Dedicated GPS parse with translation OFF keeps GPSLatitude as a raw
+  // [deg,min,sec] array (translation would stringify it) and still yields
+  // exifr's computed decimal latitude/longitude.
+  const coord = await parse(bytes, { gps: true, translateValues: false });
+  // Full parse for the diagnostic tag list.
+  const meta = await parse(bytes, true);
+
+  const src = coord ?? meta;
+  const gps = pickGps(coord) ?? pickGps(meta);
+  const metaKeys = meta ? Object.keys(meta) : coord ? Object.keys(coord) : [];
+  const debug = src
+    ? `lat=${JSON.stringify(src.latitude)} lng=${JSON.stringify(
+        src.longitude
+      )} GPSLatitude=${JSON.stringify(src.GPSLatitude)} ref=${JSON.stringify(
+        src.GPSLatitudeRef
+      )}`
+    : "no parse";
 
   return {
-    gps: pickGps(meta),
+    gps,
     hasMetadata: metaKeys.length > 0,
     unreadable: false,
     metaKeys,
+    debug,
   };
 }
