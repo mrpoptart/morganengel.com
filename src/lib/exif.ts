@@ -53,6 +53,8 @@ export interface PhotoLocationInfo {
   hasMetadata: boolean;
   /** True if the bytes couldn't be read at all (e.g. blocked cross-origin fetch). */
   unreadable: boolean;
+  /** Names of the EXIF tags found — for diagnosing missing GPS. */
+  metaKeys: string[];
 }
 
 /**
@@ -69,23 +71,28 @@ export async function inspectPhotoLocation(
   if (typeof input === "string") {
     try {
       const res = await fetch(input);
-      if (!res.ok) return { gps: null, hasMetadata: false, unreadable: true };
+      if (!res.ok)
+        return { gps: null, hasMetadata: false, unreadable: true, metaKeys: [] };
       bytes = await res.arrayBuffer();
     } catch {
-      return { gps: null, hasMetadata: false, unreadable: true };
+      return { gps: null, hasMetadata: false, unreadable: true, metaKeys: [] };
     }
   } else {
     bytes = input;
   }
 
-  const [gpsRaw, meta] = await Promise.all([
-    exifr.gps(bytes).catch(() => undefined),
-    exifr.parse(bytes).catch(() => undefined),
-  ]);
+  // Parse the full tag set (all EXIF/GPS blocks), not just the merged GPS
+  // convenience — so we can see exactly which tags exist.
+  const meta = (await exifr.parse(bytes, true).catch(() => undefined)) as
+    | Record<string, unknown>
+    | undefined;
+  const gpsRaw = await exifr.gps(bytes).catch(() => undefined);
+  const metaKeys = meta ? Object.keys(meta) : [];
 
   return {
-    gps: toGps(gpsRaw),
-    hasMetadata: !!meta && Object.keys(meta).length > 0,
+    gps: toGps(gpsRaw) ?? toGps(meta as { latitude?: number; longitude?: number }),
+    hasMetadata: metaKeys.length > 0,
     unreadable: false,
+    metaKeys,
   };
 }

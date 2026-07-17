@@ -66,7 +66,7 @@ export default function NewJournalPage() {
         );
       } else if (info.hasMetadata) {
         setPhotoNote(
-          "This photo has metadata but no GPS — your Photos app likely removed the location when sharing. Try picking the original from Files (DCIM/Camera), or set it manually below."
+          `This photo has metadata but no GPS — your Photos app likely removed the location when sharing. Try picking the original from Files (DCIM/Camera), or set it manually below. [tags found: ${info.metaKeys.join(", ")}]`
         );
       } else {
         setPhotoNote(
