@@ -13,6 +13,7 @@ interface EntryCard {
   date: string;
   tags: string[];
   author?: string;
+  number: number | null;
 }
 
 interface TripContentProps {
@@ -115,6 +116,7 @@ export default function TripContent({
               date={e.date}
               tags={e.tags}
               author={e.author}
+              number={e.number}
               index={i}
               total={entries.length}
             />

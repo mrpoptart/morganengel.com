@@ -11,6 +11,7 @@ interface JournalCardProps {
   date: string;
   tags: string[];
   author?: string;
+  number?: number | null;
   index?: number;
   total?: number;
 }
@@ -41,6 +42,7 @@ export function JournalCard({
   date,
   tags,
   author,
+  number,
   index = 0,
   total = 1,
 }: JournalCardProps) {
@@ -70,6 +72,14 @@ export function JournalCard({
 
       <div className="card-body p-6">
         <div className="flex items-center gap-3 flex-wrap">
+          {number != null && (
+            <span
+              className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-content text-[11px] font-bold font-mono shrink-0"
+              aria-label={`Stop ${number}`}
+            >
+              {number}
+            </span>
+          )}
           <span className="text-xs font-mono text-base-content/40">
             {date}
             {author && ` · by ${author}`}

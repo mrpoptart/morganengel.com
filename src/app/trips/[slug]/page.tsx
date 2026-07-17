@@ -50,11 +50,15 @@ export default async function TripPage({ params }: Props) {
   const trip = await getTripBySlugServer(slug);
   if (!trip || trip.status !== "published") notFound();
 
+  // Oldest-first (chronological). Stop numbers run oldest → newest.
   const entries = await getJournalByTripServer(trip.id);
 
   const located = entries.filter((e) => e.location);
-  const routePoints: RoutePoint[] = located.map((e, i) => ({
-    n: i + 1,
+  const stopNumber = new Map<string, number>();
+  located.forEach((e, i) => stopNumber.set(e.id, i + 1));
+
+  const routePoints: RoutePoint[] = located.map((e) => ({
+    n: stopNumber.get(e.id)!,
     slug: e.slug,
     title: e.title,
     lat: e.location!.lat,
@@ -86,7 +90,7 @@ export default async function TripPage({ params }: Props) {
       entryCount={entries.length}
       placeCount={places.size}
       routePoints={routePoints}
-      entries={entries.map((e) => ({
+      entries={[...entries].reverse().map((e) => ({
         id: e.id,
         slug: e.slug,
         title: e.title,
@@ -96,6 +100,7 @@ export default async function TripPage({ params }: Props) {
         date: formatDate(e.publishedAt),
         tags: e.tags,
         author: e.author,
+        number: stopNumber.get(e.id) ?? null,
       }))}
     />
   );
