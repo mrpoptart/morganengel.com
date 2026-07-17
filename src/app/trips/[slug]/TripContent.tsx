@@ -112,7 +112,6 @@ export default function TripContent({
               title={e.title}
               excerpt={e.excerpt}
               coverImage={e.coverImage}
-              location={e.location}
               date={e.date}
               tags={e.tags}
               author={e.author}

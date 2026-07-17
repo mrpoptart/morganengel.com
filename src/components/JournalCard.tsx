@@ -1,12 +1,10 @@
 import Link from "next/link";
-import type { GeoLocation } from "@/types/journal";
 
 interface JournalCardProps {
   slug: string;
   title: string;
   excerpt: string;
   coverImage?: string;
-  location: GeoLocation | null;
   date: string;
   tags: string[];
   author?: string;
@@ -15,29 +13,11 @@ interface JournalCardProps {
   total?: number;
 }
 
-function LocationLabel({ label }: { label: string }) {
-  return (
-    <span className="inline-flex items-center gap-1 text-xs font-mono text-primary/80">
-      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-        />
-        <circle cx="12" cy="11" r="3" strokeWidth={2} />
-      </svg>
-      {label}
-    </span>
-  );
-}
-
 export function JournalCard({
   slug,
   title,
   excerpt,
   coverImage,
-  location,
   date,
   tags,
   author,
@@ -70,8 +50,6 @@ export function JournalCard({
             {date}
             {author && ` · by ${author}`}
           </span>
-          <span className="badge badge-xs badge-primary badge-outline">travel journal</span>
-          {location?.label && <LocationLabel label={location.label} />}
         </div>
         <h2 className="text-xl font-bold text-base-content hover:text-primary transition-colors">
           {title}
