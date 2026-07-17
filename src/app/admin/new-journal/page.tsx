@@ -4,7 +4,7 @@ import { useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createJournal } from "@/lib/journal";
 import { uploadImage } from "@/lib/upload";
-import { extractGpsFromImage } from "@/lib/exif";
+import { extractGpsFromImage, extractGpsFromUrl } from "@/lib/exif";
 import { reverseGeocode } from "@/lib/geocode";
 import { Editor } from "@/components/Editor";
 import { TagsInput } from "@/components/TagsInput";
@@ -21,8 +21,10 @@ export default function NewJournalPage() {
   const [uploadingCover, setUploadingCover] = useState(false);
   const [location, setLocation] = useState<GeoLocation | null>(null);
   const [photoNote, setPhotoNote] = useState<string | null>(null);
+  const [extractingLoc, setExtractingLoc] = useState(false);
   const [saving, setSaving] = useState(false);
   const htmlRef = useRef("");
+  const coverFileRef = useRef<File | null>(null);
 
   const handleEditorUpdate = useCallback((_json: JSONContent, html: string) => {
     htmlRef.current = html;
@@ -32,9 +34,28 @@ export default function NewJournalPage() {
     if (!file) return;
     setUploadingCover(true);
     setPhotoNote(null);
+    coverFileRef.current = file;
     try {
-      // Pull GPS from the photo's EXIF and pin the map to it.
-      const gps = await extractGpsFromImage(file);
+      const url = await uploadImage(file);
+      setCoverImage(url);
+    } catch (error) {
+      console.error("Cover upload failed:", error);
+      setPhotoNote("Couldn't upload that photo.");
+    } finally {
+      setUploadingCover(false);
+    }
+  }
+
+  // Pull GPS from the current cover photo on demand and pin the map to it.
+  async function pullPhotoLocation() {
+    setExtractingLoc(true);
+    setPhotoNote(null);
+    try {
+      const gps = coverFileRef.current
+        ? await extractGpsFromImage(coverFileRef.current)
+        : coverImage
+        ? await extractGpsFromUrl(coverImage)
+        : null;
       if (gps) {
         const label = await reverseGeocode(gps.lat, gps.lng);
         setLocation({ ...gps, label: label ?? undefined });
@@ -42,17 +63,13 @@ export default function NewJournalPage() {
           label ? `📍 Location set from photo: ${label}` : "📍 Location set from photo."
         );
       } else {
-        setPhotoNote(
-          "This photo has no location data — set the location manually below."
-        );
+        setPhotoNote("This photo has no location data — set the location manually below.");
       }
-      const url = await uploadImage(file);
-      setCoverImage(url);
     } catch (error) {
-      console.error("Cover upload failed:", error);
-      setPhotoNote("Couldn't process that photo.");
+      console.error("Reading photo location failed:", error);
+      setPhotoNote("Couldn't read location from this photo.");
     } finally {
-      setUploadingCover(false);
+      setExtractingLoc(false);
     }
   }
 
@@ -120,7 +137,11 @@ export default function NewJournalPage() {
             />
             <button
               type="button"
-              onClick={() => setCoverImage(null)}
+              onClick={() => {
+                setCoverImage(null);
+                coverFileRef.current = null;
+                setPhotoNote(null);
+              }}
               className="btn btn-xs btn-error absolute top-2 right-2"
             >
               Remove
@@ -140,6 +161,29 @@ export default function NewJournalPage() {
               onChange={(e) => handleCoverFile(e.target.files?.[0])}
             />
           </label>
+        )}
+        {coverImage && (
+          <button
+            type="button"
+            onClick={pullPhotoLocation}
+            disabled={extractingLoc}
+            className="btn btn-outline btn-sm gap-1 mt-2"
+          >
+            {extractingLoc ? (
+              <span className="loading loading-spinner loading-xs" />
+            ) : (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                />
+                <circle cx="12" cy="11" r="3" strokeWidth={2} />
+              </svg>
+            )}
+            Use this photo&apos;s location
+          </button>
         )}
         {photoNote && (
           <p className="text-xs text-base-content/50 font-mono mt-2">{photoNote}</p>
