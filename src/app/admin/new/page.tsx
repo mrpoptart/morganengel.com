@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import { createPost } from "@/lib/posts";
 import { Editor } from "@/components/Editor";
 import { TagsInput } from "@/components/TagsInput";
+import { useAuth } from "@/components/AuthProvider";
 import type { JSONContent } from "novel";
 
 export default function NewPostPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [title, setTitle] = useState("");
   const [tags, setTags] = useState("");
   const [publishDate, setPublishDate] = useState("");
@@ -34,6 +36,9 @@ export default function NewPostPage() {
           .map((t) => t.trim().toLowerCase())
           .filter(Boolean),
         status,
+        ...(user?.displayName || user?.email
+          ? { author: user.displayName ?? user.email ?? undefined }
+          : {}),
         ...(publishDate ? { publishedAt: new Date(publishDate) } : {}),
       });
       router.push("/admin");

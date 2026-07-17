@@ -14,6 +14,7 @@ interface JournalContentProps {
   date: string;
   tags: string[];
   readingTime: string;
+  author?: string;
 }
 
 export default function JournalContent({
@@ -26,6 +27,7 @@ export default function JournalContent({
   date,
   tags,
   readingTime,
+  author,
 }: JournalContentProps) {
   return (
     <article className="max-w-3xl mx-auto px-6 py-16 animate-fade-in-up">
@@ -45,6 +47,12 @@ export default function JournalContent({
 
       <div className="flex items-center gap-4 mt-4 text-sm text-base-content/50 flex-wrap">
         <span className="font-mono">{date}</span>
+        {author && (
+          <>
+            <span>&middot;</span>
+            <span className="font-mono">by {author}</span>
+          </>
+        )}
         <span>&middot;</span>
         <span>{readingTime}</span>
         {location?.label && (

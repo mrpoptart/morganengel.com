@@ -67,6 +67,7 @@ export default async function JournalEntryPage({ params }: Props) {
       date={formatDate(entry.publishedAt)}
       tags={entry.tags}
       readingTime={readingTime(entry.content)}
+      author={entry.author}
     />
   );
 }

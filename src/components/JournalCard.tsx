@@ -10,6 +10,7 @@ interface JournalCardProps {
   location: GeoLocation | null;
   date: string;
   tags: string[];
+  author?: string;
   index?: number;
   total?: number;
 }
@@ -39,6 +40,7 @@ export function JournalCard({
   location,
   date,
   tags,
+  author,
   index = 0,
   total = 1,
 }: JournalCardProps) {
@@ -68,7 +70,10 @@ export function JournalCard({
 
       <div className="card-body p-6">
         <div className="flex items-center gap-3 flex-wrap">
-          <span className="text-xs font-mono text-base-content/40">{date}</span>
+          <span className="text-xs font-mono text-base-content/40">
+            {date}
+            {author && ` · by ${author}`}
+          </span>
           <span className="badge badge-xs badge-primary badge-outline">travel journal</span>
           {location?.label && <LocationLabel label={location.label} />}
         </div>

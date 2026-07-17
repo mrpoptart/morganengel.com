@@ -63,6 +63,7 @@ export default async function PostPage({ params }: Props) {
       date={formatDate(post.publishedAt)}
       tags={post.tags}
       readingTime={readingTime(post.content)}
+      author={post.author}
     />
   );
 }

@@ -97,6 +97,7 @@ export async function createJournal(data: {
   location?: GeoLocation | null;
   coverImage?: string;
   gallery?: string[];
+  author?: string;
   publishedAt?: Date;
 }): Promise<string> {
   const now = Timestamp.now();
@@ -122,6 +123,7 @@ export async function createJournal(data: {
     updatedAt: now,
   };
   if (data.coverImage) payload.coverImage = data.coverImage;
+  if (data.author) payload.author = data.author;
 
   const docRef = await addDoc(journalRef, payload);
   return docRef.id;

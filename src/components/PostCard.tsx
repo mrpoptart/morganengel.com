@@ -6,6 +6,7 @@ interface PostCardProps {
   excerpt: string;
   date: string;
   tags: string[];
+  author?: string;
   index?: number;
   total?: number;
 }
@@ -16,6 +17,7 @@ export function PostCard({
   excerpt,
   date,
   tags,
+  author,
   index = 0,
   total = 1,
 }: PostCardProps) {
@@ -28,6 +30,7 @@ export function PostCard({
       <div className="card-body p-6">
         <span className="text-xs font-mono text-base-content/40 mb-2">
           {date}
+          {author && ` · by ${author}`}
         </span>
         <h2 className="text-xl font-bold text-base-content hover:text-primary transition-colors">
           {title}

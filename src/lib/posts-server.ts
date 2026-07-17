@@ -8,6 +8,7 @@ export interface ServerPost {
   content: string;
   excerpt: string;
   coverImage?: string;
+  author?: string;
   tags: string[];
   status: "draft" | "published";
   publishedAt: FirebaseFirestore.Timestamp | null;
@@ -37,6 +38,7 @@ export interface ServerJournalEntry {
   content: string;
   excerpt: string;
   coverImage?: string;
+  author?: string;
   gallery?: string[];
   location: ServerGeoLocation | null;
   tags: string[];

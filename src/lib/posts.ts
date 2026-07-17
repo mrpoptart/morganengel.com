@@ -94,6 +94,7 @@ export async function createPost(data: {
   content: string;
   tags: string[];
   status: "draft" | "published";
+  author?: string;
   publishedAt?: Date;
 }): Promise<string> {
   const now = Timestamp.now();
@@ -103,7 +104,7 @@ export async function createPost(data: {
         ? Timestamp.fromDate(data.publishedAt)
         : now
       : null;
-  const docRef = await addDoc(postsRef, {
+  const payload: Record<string, unknown> = {
     title: data.title,
     slug: slugify(data.title),
     content: data.content,
@@ -113,7 +114,9 @@ export async function createPost(data: {
     publishedAt,
     createdAt: now,
     updatedAt: now,
-  });
+  };
+  if (data.author) payload.author = data.author;
+  const docRef = await addDoc(postsRef, payload);
   return docRef.id;
 }
 

@@ -8,7 +8,7 @@ import {
 export const revalidate = 60;
 
 type FeedItem =
-  | { kind: "post"; id: string; sortKey: number; slug: string; title: string; excerpt: string; date: string; tags: string[] }
+  | { kind: "post"; id: string; sortKey: number; slug: string; title: string; excerpt: string; date: string; tags: string[]; author?: string }
   | { kind: "quote"; id: string; sortKey: number; body: string; author: string; date: string };
 
 function formatDate(ts: FirebaseFirestore.Timestamp | null): string {
@@ -44,6 +44,7 @@ export default async function Home() {
       excerpt: p.excerpt,
       date: formatDate(p.publishedAt),
       tags: p.tags,
+      author: p.author,
     })),
     ...quotes.map<FeedItem>((q) => ({
       kind: "quote",
@@ -82,6 +83,7 @@ export default async function Home() {
                 excerpt={item.excerpt}
                 date={item.date}
                 tags={item.tags}
+                author={item.author}
                 index={i}
                 total={items.length}
               />

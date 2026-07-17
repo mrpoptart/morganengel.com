@@ -66,6 +66,7 @@ export default async function JournalIndexPage() {
               location={e.location}
               date={formatDate(e.publishedAt)}
               tags={e.tags}
+              author={e.author}
               index={i}
               total={entries.length}
             />

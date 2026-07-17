@@ -8,11 +8,13 @@ import { Editor } from "@/components/Editor";
 import { TagsInput } from "@/components/TagsInput";
 import { LocationPicker } from "@/components/LocationPicker";
 import { GalleryInput } from "@/components/GalleryInput";
+import { useAuth } from "@/components/AuthProvider";
 import type { GeoLocation } from "@/types/journal";
 import type { JSONContent } from "novel";
 
 export default function NewJournalPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [title, setTitle] = useState("");
   const [tags, setTags] = useState("");
   const [publishDate, setPublishDate] = useState("");
@@ -58,6 +60,9 @@ export default function NewJournalPage() {
         location,
         gallery,
         ...(coverImage ? { coverImage } : {}),
+        ...(user?.displayName || user?.email
+          ? { author: user.displayName ?? user.email ?? undefined }
+          : {}),
         ...(publishDate ? { publishedAt: new Date(publishDate) } : {}),
       });
       router.push("/admin");
