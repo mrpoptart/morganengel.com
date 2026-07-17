@@ -46,17 +46,25 @@ function placeCount(entries: ServerJournalEntry[]): number {
 export default async function TripsPage() {
   const trips = await getPublishedTripsServer();
 
-  const withStats = await Promise.all(
-    trips.map(async (trip) => {
-      const entries = await getJournalByTripServer(trip.id);
-      return {
-        trip,
-        entryCount: entries.length,
-        placeCount: placeCount(entries),
-        dateRange: formatDateRange(entries),
-      };
-    })
-  );
+  const withStats = (
+    await Promise.all(
+      trips.map(async (trip) => {
+        const entries = await getJournalByTripServer(trip.id);
+        const dated = entries.filter((e) => e.publishedAt);
+        // Most recent post in the trip (entries are oldest-first).
+        const latest = dated.length
+          ? dated[dated.length - 1].publishedAt!.toMillis()
+          : trip.publishedAt?.toMillis() ?? 0;
+        return {
+          trip,
+          entryCount: entries.length,
+          placeCount: placeCount(entries),
+          dateRange: formatDateRange(entries),
+          latest,
+        };
+      })
+    )
+  ).sort((a, b) => b.latest - a.latest);
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-16">
