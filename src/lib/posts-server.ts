@@ -79,11 +79,20 @@ export async function getJournalBySlugServer(
 }
 
 export async function getPublishedJournalServer(): Promise<ServerJournalEntry[]> {
-  const snapshot = await journalRef
-    .where("status", "==", "published")
-    .orderBy("publishedAt", "desc")
-    .get();
-  return snapshot.docs.map(
-    (doc) => ({ id: doc.id, ...doc.data() } as ServerJournalEntry)
-  );
+  try {
+    const snapshot = await journalRef
+      .where("status", "==", "published")
+      .orderBy("publishedAt", "desc")
+      .get();
+    return snapshot.docs.map(
+      (doc) => ({ id: doc.id, ...doc.data() } as ServerJournalEntry)
+    );
+  } catch (error) {
+    // A brand-new `journal` collection needs a composite index
+    // (status + publishedAt). Until it exists, Firestore throws
+    // FAILED_PRECONDITION. Don't let that take down the home page or the
+    // build — treat it as "no journal entries yet" and log for diagnosis.
+    console.error("getPublishedJournalServer failed:", error);
+    return [];
+  }
 }
