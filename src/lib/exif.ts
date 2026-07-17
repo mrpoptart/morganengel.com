@@ -46,3 +46,46 @@ export async function extractGpsFromUrl(url: string): Promise<Gps | null> {
     return null;
   }
 }
+
+export interface PhotoLocationInfo {
+  gps: Gps | null;
+  /** True if the image carried any EXIF metadata (camera make, timestamp…). */
+  hasMetadata: boolean;
+  /** True if the bytes couldn't be read at all (e.g. blocked cross-origin fetch). */
+  unreadable: boolean;
+}
+
+/**
+ * Inspect a photo for GPS and distinguish the "why" when it's missing:
+ * - gps present            → use it
+ * - hasMetadata, no gps    → the source app stripped location (e.g. Google Photos)
+ * - no metadata at all     → a fully re-encoded / stripped copy
+ * - unreadable             → bytes couldn't be fetched (URL fallback blocked)
+ */
+export async function inspectPhotoLocation(
+  input: File | string
+): Promise<PhotoLocationInfo> {
+  let bytes: File | ArrayBuffer;
+  if (typeof input === "string") {
+    try {
+      const res = await fetch(input);
+      if (!res.ok) return { gps: null, hasMetadata: false, unreadable: true };
+      bytes = await res.arrayBuffer();
+    } catch {
+      return { gps: null, hasMetadata: false, unreadable: true };
+    }
+  } else {
+    bytes = input;
+  }
+
+  const [gpsRaw, meta] = await Promise.all([
+    exifr.gps(bytes).catch(() => undefined),
+    exifr.parse(bytes).catch(() => undefined),
+  ]);
+
+  return {
+    gps: toGps(gpsRaw),
+    hasMetadata: !!meta && Object.keys(meta).length > 0,
+    unreadable: false,
+  };
+}

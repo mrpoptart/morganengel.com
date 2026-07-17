@@ -4,7 +4,7 @@ import { useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createJournal } from "@/lib/journal";
 import { uploadImage } from "@/lib/upload";
-import { extractGpsFromImage, extractGpsFromUrl } from "@/lib/exif";
+import { inspectPhotoLocation } from "@/lib/exif";
 import { reverseGeocode } from "@/lib/geocode";
 import { Editor } from "@/components/Editor";
 import { TagsInput } from "@/components/TagsInput";
@@ -48,22 +48,30 @@ export default function NewJournalPage() {
 
   // Pull GPS from the current cover photo on demand and pin the map to it.
   async function pullPhotoLocation() {
+    const source = coverFileRef.current ?? coverImage;
+    if (!source) return;
     setExtractingLoc(true);
     setPhotoNote(null);
     try {
-      const gps = coverFileRef.current
-        ? await extractGpsFromImage(coverFileRef.current)
-        : coverImage
-        ? await extractGpsFromUrl(coverImage)
-        : null;
-      if (gps) {
-        const label = await reverseGeocode(gps.lat, gps.lng);
-        setLocation({ ...gps, label: label ?? undefined });
+      const info = await inspectPhotoLocation(source);
+      if (info.gps) {
+        const label = await reverseGeocode(info.gps.lat, info.gps.lng);
+        setLocation({ ...info.gps, label: label ?? undefined });
         setPhotoNote(
           label ? `📍 Location set from photo: ${label}` : "📍 Location set from photo."
         );
+      } else if (info.unreadable) {
+        setPhotoNote(
+          "Couldn't read this photo's data. Re-select the original file and try again."
+        );
+      } else if (info.hasMetadata) {
+        setPhotoNote(
+          "This photo has metadata but no GPS — your Photos app likely removed the location when sharing. Try picking the original from Files (DCIM/Camera), or set it manually below."
+        );
       } else {
-        setPhotoNote("This photo has no location data — set the location manually below.");
+        setPhotoNote(
+          "No metadata in this image — it looks like a stripped copy. Try picking the original from Files (DCIM/Camera), or set it manually below."
+        );
       }
     } catch (error) {
       console.error("Reading photo location failed:", error);
