@@ -124,7 +124,7 @@ export default function AdminDashboard() {
                 <tr key={`journal-${row.data.id}`} className="hover">
                   <td>
                     <span className="badge badge-sm badge-primary badge-outline">
-                      travel journal
+                      journal
                     </span>
                   </td>
                   <td>
