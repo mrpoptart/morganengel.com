@@ -31,6 +31,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       <div className="flex items-center justify-end mb-8">
         <div className="flex items-center gap-4">
           <span className="text-sm text-base-content/50">{user.email}</span>
+          <Link href="/admin/import" className="btn btn-ghost btn-sm">
+            Import
+          </Link>
           <Link href="/admin/new-quote" className="btn btn-outline btn-sm">
             New Quote
           </Link>
