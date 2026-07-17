@@ -51,6 +51,15 @@ function generateExcerpt(html: string, maxLength = 160): string {
   return text.slice(0, maxLength).replace(/\s+\S*$/, "") + "...";
 }
 
+// Firestore rejects `undefined`. A location whose reverse-geocode found no
+// place name carries label: undefined — strip it so the write doesn't throw.
+function cleanLocation(loc: GeoLocation | null | undefined): GeoLocation | null {
+  if (!loc) return null;
+  const out: GeoLocation = { lat: loc.lat, lng: loc.lng };
+  if (loc.label) out.label = loc.label;
+  return out;
+}
+
 export async function getPublishedJournal(max?: number): Promise<JournalEntry[]> {
   const q = max
     ? query(
@@ -115,7 +124,7 @@ export async function createJournal(data: {
     slug: slugify(data.title),
     content: data.content,
     excerpt: generateExcerpt(data.content),
-    location: data.location ?? null,
+    location: cleanLocation(data.location),
     gallery: data.gallery ?? [],
     tripId: data.tripId ?? null,
     tags: data.tags,
@@ -154,7 +163,7 @@ export async function updateJournal(
   if (data.slug !== undefined) updates.slug = data.slug;
   if (data.tags !== undefined) updates.tags = data.tags;
   if (data.status !== undefined) updates.status = data.status;
-  if (data.location !== undefined) updates.location = data.location;
+  if (data.location !== undefined) updates.location = cleanLocation(data.location);
   if (data.coverImage !== undefined) updates.coverImage = data.coverImage ?? null;
   if (data.gallery !== undefined) updates.gallery = data.gallery;
   if (data.tripId !== undefined) updates.tripId = data.tripId ?? null;
