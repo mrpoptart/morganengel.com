@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 
 function ChevronLeft() {
@@ -20,8 +20,32 @@ function ChevronRight() {
 
 export function Gallery({ images }: { images: string[] }) {
   const [open, setOpen] = useState<number | null>(null);
+  const openRef = useRef(open);
+  const pushedRef = useRef(false);
 
-  const close = useCallback(() => setOpen(null), []);
+  useEffect(() => {
+    openRef.current = open;
+  }, [open]);
+
+  // Open the lightbox and push a history entry, so the device Back button
+  // closes the photo instead of navigating away from the post.
+  const openAt = useCallback((i: number) => {
+    setOpen(i);
+    if (!pushedRef.current) {
+      window.history.pushState({ galleryLightbox: true }, "");
+      pushedRef.current = true;
+    }
+  }, []);
+
+  const close = useCallback(() => {
+    if (pushedRef.current) {
+      pushedRef.current = false;
+      window.history.back(); // pops our entry → popstate clears `open`
+    } else {
+      setOpen(null);
+    }
+  }, []);
+
   const prev = useCallback(
     () => setOpen((i) => (i === null ? i : (i - 1 + images.length) % images.length)),
     [images.length]
@@ -30,6 +54,18 @@ export function Gallery({ images }: { images: string[] }) {
     () => setOpen((i) => (i === null ? i : (i + 1) % images.length)),
     [images.length]
   );
+
+  // Back button (or swipe-back) closes the lightbox rather than leaving the post.
+  useEffect(() => {
+    function onPop() {
+      if (openRef.current !== null) {
+        pushedRef.current = false;
+        setOpen(null);
+      }
+    }
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
 
   useEffect(() => {
     if (open === null) return;
@@ -55,7 +91,7 @@ export function Gallery({ images }: { images: string[] }) {
           <button
             key={`${url}-${i}`}
             type="button"
-            onClick={() => setOpen(i)}
+            onClick={() => openAt(i)}
             className="aspect-square overflow-hidden rounded-lg border border-base-content/10 group focus:outline-none focus:ring-2 focus:ring-primary/50"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
