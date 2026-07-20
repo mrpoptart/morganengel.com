@@ -1,4 +1,5 @@
 import Link from "next/link";
+import AdminEditLink from "@/app/posts/[slug]/AdminEditLink";
 import { JournalCard } from "@/components/JournalCard";
 import { TripRouteMap, type RoutePoint } from "@/components/TripRouteMap";
 import type { GeoLocation } from "@/types/journal";
@@ -17,6 +18,7 @@ interface EntryCard {
 }
 
 interface TripContentProps {
+  slug: string;
   title: string;
   description: string;
   coverImage?: string;
@@ -29,6 +31,7 @@ interface TripContentProps {
 }
 
 export default function TripContent({
+  slug,
   title,
   description,
   coverImage,
@@ -84,6 +87,7 @@ export default function TripContent({
             <span>by {author}</span>
           </>
         )}
+        <AdminEditLink slug={slug} basePath="/admin/edit-trip" />
       </div>
 
       {description && (

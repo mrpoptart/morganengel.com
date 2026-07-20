@@ -82,6 +82,7 @@ export default async function TripPage({ params }: Props) {
 
   return (
     <TripContent
+      slug={trip.slug}
       title={trip.title}
       description={trip.description}
       coverImage={trip.coverImage}
