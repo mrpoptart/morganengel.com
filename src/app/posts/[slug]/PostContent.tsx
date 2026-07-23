@@ -1,6 +1,6 @@
 import Link from "next/link";
 import AdminEditLink from "./AdminEditLink";
-import { normalizeEmbeds } from "@/lib/normalizeEmbeds";
+import { transformYoutubeEmbeds } from "@/lib/youtubeEmbeds";
 
 interface PostContentProps {
   slug: string;
@@ -58,7 +58,7 @@ export default function PostContent({ slug, title, content, date, tags, readingT
 
       <div
         className="prose prose-invert prose-lg max-w-none prose-blog"
-        dangerouslySetInnerHTML={{ __html: normalizeEmbeds(content) }}
+        dangerouslySetInnerHTML={{ __html: transformYoutubeEmbeds(content) }}
       />
     </article>
   );

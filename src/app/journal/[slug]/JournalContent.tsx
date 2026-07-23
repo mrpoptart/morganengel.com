@@ -2,7 +2,7 @@ import Link from "next/link";
 import AdminEditLink from "@/app/posts/[slug]/AdminEditLink";
 import { LocationMap } from "@/components/LocationMap";
 import { Gallery } from "@/components/Gallery";
-import { normalizeEmbeds } from "@/lib/normalizeEmbeds";
+import { transformYoutubeEmbeds } from "@/lib/youtubeEmbeds";
 import type { GeoLocation } from "@/types/journal";
 
 interface JournalContentProps {
@@ -107,7 +107,7 @@ export default function JournalContent({
 
       <div
         className="prose prose-invert prose-lg max-w-none prose-blog"
-        dangerouslySetInnerHTML={{ __html: normalizeEmbeds(content) }}
+        dangerouslySetInnerHTML={{ __html: transformYoutubeEmbeds(content) }}
       />
 
       <Gallery images={gallery} />

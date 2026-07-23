@@ -242,7 +242,7 @@
   scroll-margin-top: 5rem;
 }
 
-/* Responsive YouTube embeds (Tiptap youtube node) */
+/* Responsive YouTube embeds (Tiptap youtube node) — editor preview only */
 .prose-blog :where(div[data-youtube-video]) {
   position: relative;
   width: 100%;
@@ -257,4 +257,50 @@
   width: 100%;
   height: 100%;
   border: 0;
+}
+
+/* Published YouTube thumbnail card — taps out to youtube.com / the app,
+   sidestepping YouTube's inline "confirm you're not a bot" gate. */
+.prose-blog :where(a.yt-embed-card) {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  margin: 1.75rem 0;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: #000;
+  text-decoration: none;
+}
+.prose-blog :where(a.yt-embed-card img) {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  margin: 0;
+  transition: opacity 0.2s ease;
+}
+.prose-blog :where(a.yt-embed-card:hover img) {
+  opacity: 0.85;
+}
+.prose-blog :where(a.yt-embed-card .yt-embed-play) {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.prose-blog :where(a.yt-embed-card .yt-embed-play svg) {
+  width: 68px;
+  height: 48px;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.4));
+}
+.prose-blog :where(a.yt-embed-card .yt-embed-play-bg) {
+  fill: #f00;
+  transition: fill 0.2s ease;
+}
+.prose-blog :where(a.yt-embed-card:hover .yt-embed-play-bg) {
+  fill: #cc0000;
 }
