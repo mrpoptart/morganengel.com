@@ -59,7 +59,10 @@ const extensions = [
   Underline,
   Highlight,
   Youtube.configure({
-    nocookie: true,
+    // Standard youtube.com (not the privacy nocookie domain): the nocookie
+    // player sends no viewer cookies, so YouTube can't tell the viewer is a
+    // signed-in human and throws its "confirm you're not a bot" gate.
+    nocookie: false,
     controls: true,
     HTMLAttributes: { class: "rounded-lg overflow-hidden" },
   }),
