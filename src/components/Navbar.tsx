@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/components/AuthProvider";
 
 const navLinks = [
   { href: "/", label: "Blog" },
@@ -10,8 +11,13 @@ const navLinks = [
   { href: "/about", label: "About" },
 ];
 
+function isLinkActive(pathname: string, href: string): boolean {
+  return href === "/" ? pathname === "/" : pathname.startsWith(href);
+}
+
 export function Navbar() {
   const pathname = usePathname();
+  const { isAdmin } = useAuth();
 
   return (
     <div className="navbar bg-base-100/80 backdrop-blur-xl border-b border-base-content/5 sticky top-0 z-50">
@@ -27,10 +33,7 @@ export function Navbar() {
         {/* Desktop nav */}
         <div className="hidden lg:flex items-center gap-8">
           {navLinks.map((link) => {
-            const isActive =
-              link.href === "/"
-                ? pathname === "/"
-                : pathname.startsWith(link.href);
+            const isActive = isLinkActive(pathname, link.href);
             return (
               <Link
                 key={link.href}
@@ -68,10 +71,11 @@ export function Navbar() {
           <div
             tabIndex={0}
             role="button"
-            className="btn btn-ghost btn-sm"
+            aria-label="Open menu"
+            className="btn btn-ghost btn-square"
           >
             <svg
-              className="w-5 h-5"
+              className="w-6 h-6"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -86,13 +90,41 @@ export function Navbar() {
           </div>
           <ul
             tabIndex={0}
-            className="dropdown-content menu menu-sm bg-base-200 rounded-box shadow-2xl mt-3 w-52 p-2 z-[1]"
+            className="dropdown-content menu menu-lg bg-base-200 rounded-box shadow-2xl mt-3 w-60 p-2 gap-1 z-[1]"
           >
             {navLinks.map((link) => (
               <li key={link.href}>
-                <Link href={link.href}>{link.label}</Link>
+                <Link
+                  href={link.href}
+                  className={
+                    isLinkActive(pathname, link.href)
+                      ? "active font-medium"
+                      : undefined
+                  }
+                >
+                  {link.label}
+                </Link>
               </li>
             ))}
+            {isAdmin && (
+              <>
+                <li className="menu-title px-0 py-0">
+                  <div className="border-t border-base-content/10 my-1" />
+                </li>
+                <li>
+                  <Link
+                    href="/admin"
+                    className={
+                      pathname.startsWith("/admin")
+                        ? "active font-medium"
+                        : undefined
+                    }
+                  >
+                    Admin
+                  </Link>
+                </li>
+              </>
+            )}
           </ul>
         </div>
       </div>
