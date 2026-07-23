@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@tailwindcss/typography": "^0.5.19",
+    "@tiptap/extension-youtube": "^2.27.2",
     "daisyui": "^5.5.19",
     "firebase": "^12.11.0",
     "firebase-admin": "^13.7.0",
