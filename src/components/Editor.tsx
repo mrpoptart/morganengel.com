@@ -59,12 +59,15 @@ const extensions = [
   Underline,
   Highlight,
   Youtube.configure({
-    // Standard youtube.com (not the privacy nocookie domain): the nocookie
-    // player sends no viewer cookies, so YouTube can't tell the viewer is a
-    // signed-in human and throws its "confirm you're not a bot" gate.
     nocookie: false,
     controls: true,
-    HTMLAttributes: { class: "rounded-lg overflow-hidden" },
+    // YouTube's player needs a Referer to identify the embedding site, or it
+    // challenges playback with "confirm you're not a bot" / Error 153. This
+    // referrer policy sends the origin and clears it.
+    HTMLAttributes: {
+      class: "rounded-lg overflow-hidden",
+      referrerpolicy: "strict-origin-when-cross-origin",
+    },
   }),
   Placeholder.configure({ placeholder: "Start writing..." }),
 ];
