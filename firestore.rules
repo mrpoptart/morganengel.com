@@ -1,0 +1,20 @@
+rules_version = '2';
+
+// Mirrors the app's authorization model for the emulator: published content is
+// world-readable, and only the two admins may write. Used by the local
+// emulator and integration tests; the production rules are managed separately
+// in the Firebase console.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAdmin() {
+      return request.auth != null && request.auth.uid in [
+        '5amaiuG38XMkaGRoYJoDA95stfG2',
+        'wP0SddrHeNRZIBrgpynNKuy8M7C3'
+      ];
+    }
+    match /{document=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}

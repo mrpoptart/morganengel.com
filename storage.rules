@@ -1,0 +1,18 @@
+rules_version = '2';
+
+// Emulator/integration rules: images are world-readable, writes limited to the
+// two admins. Production rules are managed separately in the Firebase console.
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isAdmin() {
+      return request.auth != null && request.auth.uid in [
+        '5amaiuG38XMkaGRoYJoDA95stfG2',
+        'wP0SddrHeNRZIBrgpynNKuy8M7C3'
+      ];
+    }
+    match /{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}

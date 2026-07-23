@@ -6,7 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "emulator": "npx -y firebase-tools emulators:start --only firestore,auth,storage --project demo-morganengelcom",
+    "emulator:seed": "npx -y firebase-tools emulators:exec --only firestore,auth,storage --project demo-morganengelcom 'node tests/seed.mjs'",
+    "test:integration": "npx -y firebase-tools emulators:exec --only firestore,auth,storage --project demo-morganengelcom 'FIREBASE_EMULATOR=1 vitest run --config vitest.integration.config.ts'"
   },
   "dependencies": {
     "@tailwindcss/typography": "^0.5.19",
@@ -34,6 +39,7 @@
     "gray-matter": "^4.0.3",
     "marked": "^17.0.5",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.7"
   }
 }
