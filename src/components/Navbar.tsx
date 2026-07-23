@@ -19,6 +19,14 @@ export function Navbar() {
   const pathname = usePathname();
   const { isAdmin } = useAuth();
 
+  // daisyUI's dropdown stays open while the trigger holds focus; blurring it on
+  // tap closes the mobile menu after a selection.
+  const closeMenu = () => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+  };
+
   return (
     <div className="navbar bg-base-100/80 backdrop-blur-xl border-b border-base-content/5 sticky top-0 z-50">
       <div className="max-w-6xl mx-auto px-6 w-full flex items-center justify-between">
@@ -96,6 +104,7 @@ export function Navbar() {
               <li key={link.href}>
                 <Link
                   href={link.href}
+                  onClick={closeMenu}
                   className={
                     isLinkActive(pathname, link.href)
                       ? "active font-medium"
@@ -114,6 +123,7 @@ export function Navbar() {
                 <li>
                   <Link
                     href="/admin"
+                    onClick={closeMenu}
                     className={
                       pathname.startsWith("/admin")
                         ? "active font-medium"
