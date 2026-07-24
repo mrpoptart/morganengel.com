@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createQuote, DEFAULT_QUOTE_AUTHOR } from "@/lib/quotes";
+import { SaveError, formatSaveError } from "@/components/SaveError";
 
 export default function NewQuotePage() {
   const router = useRouter();
@@ -10,10 +11,12 @@ export default function NewQuotePage() {
   const [author, setAuthor] = useState(DEFAULT_QUOTE_AUTHOR);
   const [publishDate, setPublishDate] = useState("");
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   async function save() {
     if (!body.trim()) return;
     setSaving(true);
+    setSaveError(null);
     try {
       await createQuote({
         body: body.trim(),
@@ -23,6 +26,7 @@ export default function NewQuotePage() {
       router.push("/admin");
     } catch (error) {
       console.error("Failed to save quote:", error);
+      setSaveError(formatSaveError(error));
     } finally {
       setSaving(false);
     }
@@ -30,6 +34,7 @@ export default function NewQuotePage() {
 
   return (
     <div className="animate-fade-in-up">
+      <SaveError message={saveError} />
       <h1 className="text-3xl font-mono font-bold mb-6">New quote</h1>
 
       <textarea

@@ -9,6 +9,7 @@ import {
   deleteTrip,
 } from "@/lib/trips";
 import { uploadImage } from "@/lib/upload";
+import { SaveError, formatSaveError } from "@/components/SaveError";
 import type { Trip } from "@/types/trip";
 
 export default function EditTripPage() {
@@ -26,6 +27,7 @@ export default function EditTripPage() {
   const [uploadingCover, setUploadingCover] = useState(false);
   const [publishDate, setPublishDate] = useState("");
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -65,6 +67,7 @@ export default function EditTripPage() {
   async function save(status?: "draft" | "published") {
     if (!tripId) return;
     setSaving(true);
+    setSaveError(null);
     try {
       await updateTrip(tripId, {
         title: title.trim(),
@@ -77,6 +80,7 @@ export default function EditTripPage() {
       router.push("/admin");
     } catch (error) {
       console.error("Failed to save trip:", error);
+      setSaveError(formatSaveError(error));
     } finally {
       setSaving(false);
     }
@@ -100,6 +104,7 @@ export default function EditTripPage() {
 
   return (
     <div className="animate-fade-in-up">
+      <SaveError message={saveError} />
       <input
         type="text"
         placeholder="Trip name..."

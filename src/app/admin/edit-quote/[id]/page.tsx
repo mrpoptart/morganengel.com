@@ -8,6 +8,7 @@ import {
   deleteQuote,
   DEFAULT_QUOTE_AUTHOR,
 } from "@/lib/quotes";
+import { SaveError, formatSaveError } from "@/components/SaveError";
 import type { Quote } from "@/types/quote";
 
 export default function EditQuotePage() {
@@ -20,6 +21,7 @@ export default function EditQuotePage() {
   const [author, setAuthor] = useState("");
   const [publishDate, setPublishDate] = useState("");
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -43,6 +45,7 @@ export default function EditQuotePage() {
   async function save() {
     if (!quote || !body.trim()) return;
     setSaving(true);
+    setSaveError(null);
     try {
       await updateQuote(quote.id, {
         body: body.trim(),
@@ -52,6 +55,7 @@ export default function EditQuotePage() {
       router.push("/admin");
     } catch (error) {
       console.error("Failed to save quote:", error);
+      setSaveError(formatSaveError(error));
     } finally {
       setSaving(false);
     }
@@ -75,6 +79,7 @@ export default function EditQuotePage() {
 
   return (
     <div className="animate-fade-in-up">
+      <SaveError message={saveError} />
       <h1 className="text-3xl font-mono font-bold mb-6">Edit quote</h1>
 
       <textarea

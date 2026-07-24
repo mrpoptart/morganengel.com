@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { getPostById, getPostBySlug, updatePost, deletePost } from "@/lib/posts";
 import { Editor } from "@/components/Editor";
 import { TagsInput } from "@/components/TagsInput";
+import { SaveError, formatSaveError } from "@/components/SaveError";
 import type { Post } from "@/types/post";
 
 
@@ -21,6 +22,7 @@ export default function EditPostPage() {
   const [publishDate, setPublishDate] = useState("");
   const [editingSlug, setEditingSlug] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [autoSaved, setAutoSaved] = useState(false);
   const [loading, setLoading] = useState(true);
   const htmlRef = useRef("");
@@ -93,6 +95,7 @@ export default function EditPostPage() {
   async function save(status?: "draft" | "published") {
     if (!postId) return;
     setSaving(true);
+    setSaveError(null);
     try {
       await updatePost(postId, {
         title: title.trim(),
@@ -108,6 +111,7 @@ export default function EditPostPage() {
       router.push("/admin");
     } catch (error) {
       console.error("Failed to save:", error);
+      setSaveError(formatSaveError(error));
     } finally {
       setSaving(false);
     }
@@ -131,6 +135,7 @@ export default function EditPostPage() {
 
   return (
     <div className="animate-fade-in-up">
+      <SaveError message={saveError} />
       <input
         type="text"
         placeholder="Post title..."

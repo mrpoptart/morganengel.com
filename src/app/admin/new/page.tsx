@@ -6,6 +6,7 @@ import { createPost } from "@/lib/posts";
 import { Editor } from "@/components/Editor";
 import { TagsInput } from "@/components/TagsInput";
 import { useAuth } from "@/components/AuthProvider";
+import { SaveError, formatSaveError } from "@/components/SaveError";
 import type { JSONContent } from "novel";
 
 export default function NewPostPage() {
@@ -15,6 +16,7 @@ export default function NewPostPage() {
   const [tags, setTags] = useState("");
   const [publishDate, setPublishDate] = useState("");
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const htmlRef = useRef("");
 
   const handleEditorUpdate = useCallback(
@@ -27,6 +29,7 @@ export default function NewPostPage() {
   async function save(status: "draft" | "published") {
     if (!title.trim()) return;
     setSaving(true);
+    setSaveError(null);
     try {
       const id = await createPost({
         title: title.trim(),
@@ -44,6 +47,7 @@ export default function NewPostPage() {
       router.push("/admin");
     } catch (error) {
       console.error("Failed to save:", error);
+      setSaveError(formatSaveError(error));
     } finally {
       setSaving(false);
     }
@@ -51,6 +55,7 @@ export default function NewPostPage() {
 
   return (
     <div className="animate-fade-in-up">
+      <SaveError message={saveError} />
       <input
         type="text"
         placeholder="Post title..."

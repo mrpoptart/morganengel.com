@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createTrip } from "@/lib/trips";
 import { uploadImage } from "@/lib/upload";
 import { useAuth } from "@/components/AuthProvider";
+import { SaveError, formatSaveError } from "@/components/SaveError";
 
 export default function NewTripPage() {
   const router = useRouter();
@@ -15,6 +16,7 @@ export default function NewTripPage() {
   const [uploadingCover, setUploadingCover] = useState(false);
   const [publishDate, setPublishDate] = useState("");
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   async function handleCoverFile(file: File | undefined) {
     if (!file) return;
@@ -31,6 +33,7 @@ export default function NewTripPage() {
   async function save(status: "draft" | "published") {
     if (!title.trim()) return;
     setSaving(true);
+    setSaveError(null);
     try {
       await createTrip({
         title: title.trim(),
@@ -45,6 +48,7 @@ export default function NewTripPage() {
       router.push("/admin");
     } catch (error) {
       console.error("Failed to save trip:", error);
+      setSaveError(formatSaveError(error));
     } finally {
       setSaving(false);
     }
@@ -52,6 +56,7 @@ export default function NewTripPage() {
 
   return (
     <div className="animate-fade-in-up">
+      <SaveError message={saveError} />
       <input
         type="text"
         placeholder="Trip name..."
