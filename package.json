@@ -11,7 +11,7 @@
     "test:watch": "vitest",
     "emulator": "npx -y firebase-tools emulators:start --only firestore,auth,storage --project demo-morganengelcom",
     "emulator:seed": "npx -y firebase-tools emulators:exec --only firestore,auth,storage --project demo-morganengelcom 'node tests/seed.mjs'",
-    "test:integration": "npx -y firebase-tools emulators:exec --only firestore,auth,storage --project demo-morganengelcom 'FIREBASE_EMULATOR=1 vitest run --config vitest.integration.config.ts'"
+    "test:integration": "npx -y firebase-tools emulators:exec --only firestore,auth,storage --project demo-morganengelcom 'FIREBASE_EMULATOR=1 NEXT_PUBLIC_FIREBASE_EMULATOR=1 vitest run --config vitest.integration.config.ts'"
   },
   "dependencies": {
     "@tailwindcss/typography": "^0.5.19",

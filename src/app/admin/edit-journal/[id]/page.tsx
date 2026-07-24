@@ -35,6 +35,7 @@ export default function EditJournalPage() {
   const [photoNote, setPhotoNote] = useState<string | null>(null);
   const [editingSlug, setEditingSlug] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [autoSaved, setAutoSaved] = useState(false);
   const [loading, setLoading] = useState(true);
   const htmlRef = useRef("");
@@ -127,6 +128,7 @@ export default function EditJournalPage() {
   async function save(status?: "draft" | "published") {
     if (!entryId) return;
     setSaving(true);
+    setSaveError(null);
     try {
       await updateJournal(entryId, {
         title: title.trim(),
@@ -146,6 +148,8 @@ export default function EditJournalPage() {
       router.push("/admin");
     } catch (error) {
       console.error("Failed to save:", error);
+      const e = error as { code?: string; message?: string };
+      setSaveError(`${e.code ?? "error"}: ${e.message ?? String(error)}`);
     } finally {
       setSaving(false);
     }
@@ -169,6 +173,11 @@ export default function EditJournalPage() {
 
   return (
     <div className="animate-fade-in-up">
+      {saveError && (
+        <div className="alert alert-error text-sm mb-4 font-mono break-all">
+          <span>Save failed — {saveError}</span>
+        </div>
+      )}
       <input
         type="text"
         placeholder="Journal title..."
