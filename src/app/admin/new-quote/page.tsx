@@ -4,9 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createQuote, DEFAULT_QUOTE_AUTHOR } from "@/lib/quotes";
 import { SaveError, formatSaveError } from "@/components/SaveError";
+import { useToast } from "@/components/ToastProvider";
 
 export default function NewQuotePage() {
   const router = useRouter();
+  const { showToast } = useToast();
   const [body, setBody] = useState("");
   const [author, setAuthor] = useState(DEFAULT_QUOTE_AUTHOR);
   const [publishDate, setPublishDate] = useState("");
@@ -23,6 +25,7 @@ export default function NewQuotePage() {
         author: author.trim() || DEFAULT_QUOTE_AUTHOR,
         ...(publishDate ? { publishedAt: new Date(publishDate) } : {}),
       });
+      showToast("Published");
       router.push("/admin");
     } catch (error) {
       console.error("Failed to save quote:", error);

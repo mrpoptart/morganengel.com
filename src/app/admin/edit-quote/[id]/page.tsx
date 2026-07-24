@@ -9,11 +9,13 @@ import {
   DEFAULT_QUOTE_AUTHOR,
 } from "@/lib/quotes";
 import { SaveError, formatSaveError } from "@/components/SaveError";
+import { useToast } from "@/components/ToastProvider";
 import type { Quote } from "@/types/quote";
 
 export default function EditQuotePage() {
   const router = useRouter();
   const params = useParams();
+  const { showToast } = useToast();
   const id = params.id as string;
 
   const [quote, setQuote] = useState<Quote | null>(null);
@@ -52,6 +54,7 @@ export default function EditQuotePage() {
         author: author.trim() || DEFAULT_QUOTE_AUTHOR,
         ...(publishDate ? { publishedAt: new Date(publishDate) } : {}),
       });
+      showToast("Updated");
       router.push("/admin");
     } catch (error) {
       console.error("Failed to save quote:", error);

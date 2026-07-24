@@ -6,12 +6,14 @@ import { getPostById, getPostBySlug, updatePost, deletePost } from "@/lib/posts"
 import { Editor } from "@/components/Editor";
 import { TagsInput } from "@/components/TagsInput";
 import { SaveError, formatSaveError } from "@/components/SaveError";
+import { useToast } from "@/components/ToastProvider";
 import type { Post } from "@/types/post";
 
 
 export default function EditPostPage() {
   const router = useRouter();
   const params = useParams();
+  const { showToast } = useToast();
   const idOrSlug = params.id as string;
 
   const [postId, setPostId] = useState<string | null>(null);
@@ -108,6 +110,13 @@ export default function EditPostPage() {
         ...(status ? { status } : {}),
         ...(publishDate ? { publishedAt: new Date(publishDate) } : {}),
       });
+      showToast(
+        status === "published"
+          ? post?.status === "published"
+            ? "Updated"
+            : "Published"
+          : "Saved as draft"
+      );
       router.push("/admin");
     } catch (error) {
       console.error("Failed to save:", error);

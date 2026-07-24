@@ -7,11 +7,13 @@ import { Editor } from "@/components/Editor";
 import { TagsInput } from "@/components/TagsInput";
 import { useAuth } from "@/components/AuthProvider";
 import { SaveError, formatSaveError } from "@/components/SaveError";
+import { useToast } from "@/components/ToastProvider";
 import type { JSONContent } from "novel";
 
 export default function NewPostPage() {
   const router = useRouter();
   const { user } = useAuth();
+  const { showToast } = useToast();
   const [title, setTitle] = useState("");
   const [tags, setTags] = useState("");
   const [publishDate, setPublishDate] = useState("");
@@ -44,6 +46,7 @@ export default function NewPostPage() {
           : {}),
         ...(publishDate ? { publishedAt: new Date(publishDate) } : {}),
       });
+      showToast(status === "published" ? "Published" : "Draft saved");
       router.push("/admin");
     } catch (error) {
       console.error("Failed to save:", error);

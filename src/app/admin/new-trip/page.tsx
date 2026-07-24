@@ -6,10 +6,12 @@ import { createTrip } from "@/lib/trips";
 import { uploadImage } from "@/lib/upload";
 import { useAuth } from "@/components/AuthProvider";
 import { SaveError, formatSaveError } from "@/components/SaveError";
+import { useToast } from "@/components/ToastProvider";
 
 export default function NewTripPage() {
   const router = useRouter();
   const { user } = useAuth();
+  const { showToast } = useToast();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [coverImage, setCoverImage] = useState<string | null>(null);
@@ -45,6 +47,7 @@ export default function NewTripPage() {
           : {}),
         ...(publishDate ? { publishedAt: new Date(publishDate) } : {}),
       });
+      showToast(status === "published" ? "Published" : "Draft saved");
       router.push("/admin");
     } catch (error) {
       console.error("Failed to save trip:", error);

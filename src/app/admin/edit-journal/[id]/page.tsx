@@ -14,11 +14,13 @@ import { TagsInput } from "@/components/TagsInput";
 import { LocationPicker } from "@/components/LocationPicker";
 import { GalleryInput } from "@/components/GalleryInput";
 import { TripSelect } from "@/components/TripSelect";
+import { useToast } from "@/components/ToastProvider";
 import type { JournalEntry, GeoLocation } from "@/types/journal";
 
 export default function EditJournalPage() {
   const router = useRouter();
   const params = useParams();
+  const { showToast } = useToast();
   const idOrSlug = params.id as string;
 
   const [entryId, setEntryId] = useState<string | null>(null);
@@ -145,6 +147,13 @@ export default function EditJournalPage() {
         ...(status ? { status } : {}),
         ...(publishDate ? { publishedAt: new Date(publishDate) } : {}),
       });
+      showToast(
+        status === "published"
+          ? entry?.status === "published"
+            ? "Updated"
+            : "Published"
+          : "Saved as draft"
+      );
       router.push("/admin");
     } catch (error) {
       console.error("Failed to save:", error);

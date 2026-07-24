@@ -5,6 +5,7 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { AuthProvider } from "@/components/AuthProvider";
 import { AnalyticsProvider } from "@/components/AnalyticsProvider";
+import { ToastProvider } from "@/components/ToastProvider";
 
 export const metadata: Metadata = {
   title: "Morgan's Unquiet Mind",
@@ -49,12 +50,14 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col font-sans">
         <AuthProvider>
-          <Suspense fallback={null}>
-            <AnalyticsProvider />
-          </Suspense>
-          <Navbar />
-          <main className="flex-1">{children}</main>
-          <Footer />
+          <ToastProvider>
+            <Suspense fallback={null}>
+              <AnalyticsProvider />
+            </Suspense>
+            <Navbar />
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </ToastProvider>
         </AuthProvider>
       </body>
     </html>

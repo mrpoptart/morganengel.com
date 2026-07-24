@@ -10,11 +10,13 @@ import {
 } from "@/lib/trips";
 import { uploadImage } from "@/lib/upload";
 import { SaveError, formatSaveError } from "@/components/SaveError";
+import { useToast } from "@/components/ToastProvider";
 import type { Trip } from "@/types/trip";
 
 export default function EditTripPage() {
   const router = useRouter();
   const params = useParams();
+  const { showToast } = useToast();
   const idOrSlug = params.id as string;
 
   const [trip, setTrip] = useState<Trip | null>(null);
@@ -77,6 +79,13 @@ export default function EditTripPage() {
         ...(status ? { status } : {}),
         ...(publishDate ? { publishedAt: new Date(publishDate) } : {}),
       });
+      showToast(
+        status === "published"
+          ? trip?.status === "published"
+            ? "Updated"
+            : "Published"
+          : "Saved as draft"
+      );
       router.push("/admin");
     } catch (error) {
       console.error("Failed to save trip:", error);
