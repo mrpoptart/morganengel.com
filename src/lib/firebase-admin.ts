@@ -8,7 +8,9 @@ import { getStorage } from "firebase-admin/storage";
 // / FIREBASE_AUTH_EMULATOR_HOST / FIREBASE_STORAGE_EMULATOR_HOST are set, and
 // needs no real service-account credentials. With the flag unset, this is the
 // original production initialization, unchanged.
-const useEmulator = process.env.FIREBASE_EMULATOR === "1";
+const useEmulator =
+  process.env.NODE_ENV !== "production" &&
+  process.env.FIREBASE_EMULATOR === "1";
 
 if (getApps().length === 0) {
   if (useEmulator) {

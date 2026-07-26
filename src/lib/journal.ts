@@ -13,6 +13,7 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { db } from "./firebase";
+import { withTimeout } from "./withTimeout";
 import type { JournalEntry, GeoLocation } from "@/types/journal";
 
 const journalRef = collection(db, "journal");
@@ -136,7 +137,7 @@ export async function createJournal(data: {
   if (data.coverImage) payload.coverImage = data.coverImage;
   if (data.author) payload.author = data.author;
 
-  const docRef = await addDoc(journalRef, payload);
+  const docRef = await withTimeout(addDoc(journalRef, payload));
   return docRef.id;
 }
 
@@ -182,7 +183,7 @@ export async function updateJournal(
     }
   }
 
-  await updateDoc(doc(db, "journal", id), updates);
+  await withTimeout(updateDoc(doc(db, "journal", id), updates));
 }
 
 export async function deleteJournal(id: string): Promise<void> {

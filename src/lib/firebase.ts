@@ -8,7 +8,12 @@ import { getAnalytics, isSupported, type Analytics } from "firebase/analytics";
 // dev and tests, never on Vercel). Runs against a demo-* project so it can
 // never reach real Firebase. With the flag unset, everything below is the
 // original production config, unchanged.
-const useEmulator = process.env.NEXT_PUBLIC_FIREBASE_EMULATOR === "1";
+// Never in a production build: NODE_ENV is inlined as "production" there, so
+// this whole branch dead-code-eliminates away and can't accidentally point the
+// live site at a local emulator.
+const useEmulator =
+  process.env.NODE_ENV !== "production" &&
+  process.env.NEXT_PUBLIC_FIREBASE_EMULATOR === "1";
 
 const firebaseConfig = useEmulator
   ? {

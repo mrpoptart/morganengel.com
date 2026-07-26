@@ -11,6 +11,7 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { db } from "./firebase";
+import { withTimeout } from "./withTimeout";
 import type { Quote } from "@/types/quote";
 
 const quotesRef = collection(db, "quotes");
@@ -38,13 +39,15 @@ export async function createQuote(data: {
   const publishedAt = data.publishedAt
     ? Timestamp.fromDate(data.publishedAt)
     : now;
-  const docRef = await addDoc(quotesRef, {
-    body: data.body,
-    author: data.author,
-    publishedAt,
-    createdAt: now,
-    updatedAt: now,
-  });
+  const docRef = await withTimeout(
+    addDoc(quotesRef, {
+      body: data.body,
+      author: data.author,
+      publishedAt,
+      createdAt: now,
+      updatedAt: now,
+    })
+  );
   return docRef.id;
 }
 
@@ -60,7 +63,7 @@ export async function updateQuote(
   if (data.publishedAt) {
     updates.publishedAt = Timestamp.fromDate(data.publishedAt);
   }
-  await updateDoc(doc(db, "quotes", id), updates);
+  await withTimeout(updateDoc(doc(db, "quotes", id), updates));
 }
 
 export async function deleteQuote(id: string): Promise<void> {

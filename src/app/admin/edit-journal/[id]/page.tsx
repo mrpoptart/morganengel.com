@@ -15,6 +15,7 @@ import { LocationPicker } from "@/components/LocationPicker";
 import { GalleryInput } from "@/components/GalleryInput";
 import { TripSelect } from "@/components/TripSelect";
 import { useToast } from "@/components/ToastProvider";
+import { formatSaveError } from "@/components/SaveError";
 import type { JournalEntry, GeoLocation } from "@/types/journal";
 
 export default function EditJournalPage() {
@@ -157,8 +158,7 @@ export default function EditJournalPage() {
       router.push("/admin");
     } catch (error) {
       console.error("Failed to save:", error);
-      const e = error as { code?: string; message?: string };
-      setSaveError(`${e.code ?? "error"}: ${e.message ?? String(error)}`);
+      setSaveError(formatSaveError(error));
     } finally {
       setSaving(false);
     }

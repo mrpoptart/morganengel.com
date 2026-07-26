@@ -13,6 +13,7 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { db } from "./firebase";
+import { withTimeout } from "./withTimeout";
 import type { Post } from "@/types/post";
 
 const postsRef = collection(db, "posts");
@@ -116,7 +117,7 @@ export async function createPost(data: {
     updatedAt: now,
   };
   if (data.author) payload.author = data.author;
-  const docRef = await addDoc(postsRef, payload);
+  const docRef = await withTimeout(addDoc(postsRef, payload));
   return docRef.id;
 }
 
@@ -149,7 +150,7 @@ export async function updatePost(
     }
   }
 
-  await updateDoc(doc(db, "posts", id), updates);
+  await withTimeout(updateDoc(doc(db, "posts", id), updates));
 }
 
 export async function getAllTags(): Promise<string[]> {

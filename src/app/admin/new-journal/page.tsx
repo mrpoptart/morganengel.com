@@ -11,6 +11,7 @@ import { GalleryInput } from "@/components/GalleryInput";
 import { TripSelect } from "@/components/TripSelect";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/components/ToastProvider";
+import { formatSaveError } from "@/components/SaveError";
 import type { GeoLocation } from "@/types/journal";
 import type { JSONContent } from "novel";
 
@@ -76,8 +77,7 @@ export default function NewJournalPage() {
       router.push("/admin");
     } catch (error) {
       console.error("Failed to save:", error);
-      const e = error as { code?: string; message?: string };
-      setSaveError(`${e.code ?? "error"}: ${e.message ?? String(error)}`);
+      setSaveError(formatSaveError(error));
     } finally {
       setSaving(false);
     }

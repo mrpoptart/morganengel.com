@@ -15,4 +15,9 @@ describe("formatSaveError", () => {
   it("stringifies anything else", () => {
     expect(formatSaveError("weird")).toBe("error: weird");
   });
+
+  it("shows a timeout message without the error prefix", () => {
+    const err = { name: "TimeoutError", message: "Timed out — try again." };
+    expect(formatSaveError(err)).toBe("Timed out — try again.");
+  });
 });

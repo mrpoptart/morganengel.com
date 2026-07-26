@@ -3,7 +3,9 @@
 // way to tell success from failure. Surfaces the Firebase error code + message.
 
 export function formatSaveError(error: unknown): string {
-  const e = error as { code?: string; message?: string };
+  const e = error as { code?: string; message?: string; name?: string };
+  // Timeouts already carry a plain-English message; don't prefix them.
+  if (e?.name === "TimeoutError") return e.message ?? "Save timed out.";
   return `${e.code ?? "error"}: ${e.message ?? String(error)}`;
 }
 

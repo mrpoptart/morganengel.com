@@ -13,6 +13,7 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { db } from "./firebase";
+import { withTimeout } from "./withTimeout";
 import type { Trip } from "@/types/trip";
 
 const tripsRef = collection(db, "trips");
@@ -91,7 +92,7 @@ export async function createTrip(data: {
   if (data.coverImage) payload.coverImage = data.coverImage;
   if (data.author) payload.author = data.author;
 
-  const docRef = await addDoc(tripsRef, payload);
+  const docRef = await withTimeout(addDoc(tripsRef, payload));
   return docRef.id;
 }
 
@@ -125,7 +126,7 @@ export async function updateTrip(
     }
   }
 
-  await updateDoc(doc(db, "trips", id), updates);
+  await withTimeout(updateDoc(doc(db, "trips", id), updates));
 }
 
 export async function deleteTrip(id: string): Promise<void> {
