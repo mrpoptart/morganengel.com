@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createJournal } from "@/lib/journal";
 import { uploadImage } from "@/lib/upload";
@@ -15,6 +15,11 @@ import { useToast } from "@/components/ToastProvider";
 import { formatSaveError } from "@/components/SaveError";
 import type { GeoLocation } from "@/types/journal";
 import type { JSONContent } from "novel";
+
+// Local backup key. A new entry has no server document until the first save, so
+// we continuously stash the in-progress draft here — it survives refresh, tab
+// close, and navigation, and is restored when the page reopens.
+const LOCAL_KEY = "unsaved:new-journal";
 
 export default function NewJournalPage() {
   const router = useRouter();
@@ -31,11 +36,121 @@ export default function NewJournalPage() {
   const [photoNote, setPhotoNote] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
+  const [restored, setRestored] = useState(false);
+  const [initialHTML, setInitialHTML] = useState<string | undefined>(undefined);
   const htmlRef = useRef("");
+  const localTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dirtyRef = useRef(false);
 
-  const handleEditorUpdate = useCallback((_json: JSONContent, html: string) => {
-    htmlRef.current = html;
+  // Restore any locally-backed-up draft before rendering the editor.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(LOCAL_KEY);
+      if (raw) {
+        const d = JSON.parse(raw);
+        if (d.title) setTitle(d.title);
+        if (d.tags) setTags(d.tags);
+        if (d.publishDate) setPublishDate(d.publishDate);
+        if (d.location) setLocation(d.location);
+        if (Array.isArray(d.gallery)) setGallery(d.gallery);
+        if (d.tripId) setTripId(d.tripId);
+        if (d.coverImage) setCoverImage(d.coverImage);
+        if (d.content) {
+          htmlRef.current = d.content;
+          setInitialHTML(d.content);
+        }
+        if (d.title || d.content) setRestored(true);
+      }
+    } catch {
+      // Corrupt backup — ignore and start fresh.
+    }
+    setHydrated(true);
   }, []);
+
+  const scheduleLocalSave = useCallback(() => {
+    dirtyRef.current = true;
+    if (localTimer.current) clearTimeout(localTimer.current);
+    localTimer.current = setTimeout(() => {
+      const hasContent =
+        title.trim() || htmlRef.current.trim() || gallery.length > 0 || !!coverImage;
+      if (!hasContent) return;
+      try {
+        localStorage.setItem(
+          LOCAL_KEY,
+          JSON.stringify({
+            title,
+            tags,
+            publishDate,
+            location,
+            gallery,
+            tripId,
+            coverImage,
+            content: htmlRef.current,
+          })
+        );
+      } catch {
+        // Storage full or unavailable — nothing else we can do here.
+      }
+    }, 800);
+  }, [title, tags, publishDate, location, gallery, tripId, coverImage]);
+
+  // Back up on any field change (once restored, so we don't overwrite before load).
+  useEffect(() => {
+    if (hydrated) scheduleLocalSave();
+  }, [
+    title,
+    tags,
+    publishDate,
+    location,
+    gallery,
+    tripId,
+    coverImage,
+    hydrated,
+    scheduleLocalSave,
+  ]);
+
+  // Warn before leaving with an unsaved draft.
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (dirtyRef.current) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (localTimer.current) clearTimeout(localTimer.current);
+    },
+    []
+  );
+
+  const handleEditorUpdate = useCallback(
+    (_json: JSONContent, html: string) => {
+      htmlRef.current = html;
+      if (hydrated) scheduleLocalSave();
+    },
+    [hydrated, scheduleLocalSave]
+  );
+
+  function clearLocalBackup() {
+    if (localTimer.current) clearTimeout(localTimer.current);
+    dirtyRef.current = false;
+    try {
+      localStorage.removeItem(LOCAL_KEY);
+    } catch {
+      // ignore
+    }
+  }
+
+  function discardDraft() {
+    clearLocalBackup();
+    window.location.reload();
+  }
 
   async function handleCoverFile(file: File | undefined) {
     if (!file) return;
@@ -74,6 +189,7 @@ export default function NewJournalPage() {
           : {}),
         ...(publishDate ? { publishedAt: new Date(publishDate) } : {}),
       });
+      clearLocalBackup();
       showToast(status === "published" ? "Published" : "Draft saved");
       router.push("/admin");
     } catch (error) {
@@ -84,11 +200,27 @@ export default function NewJournalPage() {
     }
   }
 
+  if (!hydrated) {
+    return (
+      <div className="flex justify-center py-16">
+        <span className="loading loading-spinner loading-lg text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="animate-fade-in-up">
       {saveError && (
         <div className="alert alert-error text-sm mb-4 font-mono break-all">
           <span>Save failed — {saveError}</span>
+        </div>
+      )}
+      {restored && (
+        <div className="alert text-sm mb-4">
+          <span>Restored your unsaved draft.</span>
+          <button onClick={discardDraft} className="btn btn-xs btn-ghost">
+            Discard
+          </button>
         </div>
       )}
       <input
@@ -170,7 +302,7 @@ export default function NewJournalPage() {
         <LocationPicker value={location} onChange={setLocation} />
       </div>
 
-      <Editor onUpdate={handleEditorUpdate} />
+      <Editor initialHTML={initialHTML} onUpdate={handleEditorUpdate} />
 
       <div className="mt-6">
         <label className="text-xs text-base-content/40 font-mono block mb-2">
