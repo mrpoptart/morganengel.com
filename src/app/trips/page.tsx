@@ -10,7 +10,7 @@ import {
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: "Trips",
+  title: "Engel Family Travel Journal",
   description: "Travel journals, grouped by trip.",
 };
 
@@ -70,7 +70,7 @@ export default async function TripsPage() {
     <div className="max-w-6xl mx-auto px-6 py-16">
       <div className="flex items-start justify-between gap-4 mb-8 animate-fade-in-up">
         <div>
-          <h1 className="text-3xl font-mono font-bold">Trips</h1>
+          <h1 className="text-3xl font-mono font-bold">Engel Family Travel Journal</h1>
           <p className="text-base-content/50 font-mono text-sm mt-2">
             Travel journals, grouped by trip.
           </p>
