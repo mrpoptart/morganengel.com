@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { getPostById, getPostBySlug, updatePost, deletePost } from "@/lib/posts";
+import { uploadInlineImages } from "@/lib/uploadInlineImages";
 import { Editor } from "@/components/Editor";
 import { TagsInput } from "@/components/TagsInput";
 import { SaveError, formatSaveError } from "@/components/SaveError";
@@ -102,7 +103,7 @@ export default function EditPostPage() {
       await updatePost(postId, {
         title: title.trim(),
         slug: slug.trim(),
-        content: htmlRef.current,
+        content: await uploadInlineImages(htmlRef.current),
         tags: tags
           .split(",")
           .map((t) => t.trim().toLowerCase())

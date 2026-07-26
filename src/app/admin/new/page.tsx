@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createPost } from "@/lib/posts";
+import { uploadInlineImages } from "@/lib/uploadInlineImages";
 import { Editor } from "@/components/Editor";
 import { TagsInput } from "@/components/TagsInput";
 import { useAuth } from "@/components/AuthProvider";
@@ -35,7 +36,7 @@ export default function NewPostPage() {
     try {
       const id = await createPost({
         title: title.trim(),
-        content: htmlRef.current,
+        content: await uploadInlineImages(htmlRef.current),
         tags: tags
           .split(",")
           .map((t) => t.trim().toLowerCase())

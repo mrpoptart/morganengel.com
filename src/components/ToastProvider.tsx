@@ -6,8 +6,10 @@ import {
   useState,
   useCallback,
   useRef,
+  useEffect,
   type ReactNode,
 } from "react";
+import { createPortal } from "react-dom";
 
 type ToastKind = "success" | "error";
 
@@ -24,11 +26,18 @@ interface ToastContextValue {
 const ToastContext = createContext<ToastContextValue>({ showToast: () => {} });
 
 // Lives in the root layout so a toast fired right before a router.push survives
-// the client-side navigation and is still visible on the page you land on
-// (e.g. "Published" showing on the dashboard after saving).
+// the client-side navigation and is still visible on the page you land on. The
+// toast is portaled to <body> and explicitly fixed to the viewport so a
+// transformed ancestor (e.g. the page's fade-in animation) can't pin it into
+// the page flow.
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const [mounted, setMounted] = useState(false);
   const nextId = useRef(0);
+
+  // Mount gate so the body portal only renders client-side (document exists).
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => setMounted(true), []);
 
   const showToast = useCallback(
     (message: string, kind: ToastKind = "success") => {
@@ -44,18 +53,37 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      <div className="toast toast-end z-[100]">
-        {toasts.map((t) => (
+      {mounted &&
+        createPortal(
           <div
-            key={t.id}
-            className={`alert ${
-              t.kind === "success" ? "alert-success" : "alert-error"
-            } shadow-lg text-sm`}
+            style={{
+              position: "fixed",
+              left: 0,
+              right: 0,
+              bottom: "max(1rem, env(safe-area-inset-bottom))",
+              zIndex: 9999,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: "0.5rem",
+              pointerEvents: "none",
+              padding: "0 1rem",
+            }}
           >
-            <span>{t.message}</span>
-          </div>
-        ))}
-      </div>
+            {toasts.map((t) => (
+              <div
+                key={t.id}
+                className={`alert ${
+                  t.kind === "success" ? "alert-success" : "alert-error"
+                } shadow-lg text-sm w-auto max-w-[90vw]`}
+                style={{ pointerEvents: "auto" }}
+              >
+                <span>{t.message}</span>
+              </div>
+            ))}
+          </div>,
+          document.body
+        )}
     </ToastContext.Provider>
   );
 }

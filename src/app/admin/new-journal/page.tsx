@@ -4,6 +4,7 @@ import { useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createJournal } from "@/lib/journal";
 import { uploadImage } from "@/lib/upload";
+import { uploadInlineImages } from "@/lib/uploadInlineImages";
 import { Editor } from "@/components/Editor";
 import { TagsInput } from "@/components/TagsInput";
 import { LocationPicker } from "@/components/LocationPicker";
@@ -58,7 +59,7 @@ export default function NewJournalPage() {
     try {
       await createJournal({
         title: title.trim(),
-        content: htmlRef.current,
+        content: await uploadInlineImages(htmlRef.current),
         tags: tags
           .split(",")
           .map((t) => t.trim().toLowerCase())

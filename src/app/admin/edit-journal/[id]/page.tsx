@@ -9,6 +9,7 @@ import {
   deleteJournal,
 } from "@/lib/journal";
 import { uploadImage } from "@/lib/upload";
+import { uploadInlineImages } from "@/lib/uploadInlineImages";
 import { Editor } from "@/components/Editor";
 import { TagsInput } from "@/components/TagsInput";
 import { LocationPicker } from "@/components/LocationPicker";
@@ -136,7 +137,7 @@ export default function EditJournalPage() {
       await updateJournal(entryId, {
         title: title.trim(),
         slug: slug.trim(),
-        content: htmlRef.current,
+        content: await uploadInlineImages(htmlRef.current),
         tags: tags
           .split(",")
           .map((t) => t.trim().toLowerCase())
