@@ -64,13 +64,19 @@ export default function EditPostPage() {
     if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
     setAutoSaved(false);
     autosaveTimer.current = setTimeout(async () => {
-      await updatePost(postId, {
-        title: title.trim(),
-        slug: slug.trim(),
-        content: htmlRef.current,
-        tags: tags.split(",").map((t) => t.trim().toLowerCase()).filter(Boolean),
-      });
-      setAutoSaved(true);
+      try {
+        await updatePost(postId, {
+          title: title.trim(),
+          slug: slug.trim(),
+          content: await uploadInlineImages(htmlRef.current),
+          tags: tags.split(",").map((t) => t.trim().toLowerCase()).filter(Boolean),
+        });
+        setAutoSaved(true);
+        setSaveError(null);
+      } catch (error) {
+        console.error("Autosave failed:", error);
+        setSaveError(formatSaveError(error));
+      }
     }, 2000);
   }, [postId, post?.status, title, slug, tags]);
 
