@@ -1,6 +1,10 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { getJournalBySlugServer, getTripByIdServer } from "@/lib/posts-server";
+import {
+  getJournalBySlugServer,
+  getTripByIdServer,
+  getJournalByTripServer,
+} from "@/lib/posts-server";
 import JournalContent from "./JournalContent";
 
 export const revalidate = 60;
@@ -59,6 +63,30 @@ export default async function JournalEntryPage({ params }: Props) {
   const trip = entry.tripId ? await getTripByIdServer(entry.tripId) : null;
   const publishedTrip = trip && trip.status === "published" ? trip : null;
 
+  // Sibling entries in the same trip, oldest-first (matches the stop order), so
+  // readers can page through the journey from post to post.
+  let prevEntry: { slug: string; title: string } | null = null;
+  let nextEntry: { slug: string; title: string } | null = null;
+  let firstEntry: { slug: string; title: string } | null = null;
+  if (publishedTrip) {
+    const siblings = await getJournalByTripServer(publishedTrip.id);
+    const idx = siblings.findIndex((e) => e.id === entry.id);
+    if (idx !== -1) {
+      if (idx > 0) {
+        const p = siblings[idx - 1];
+        prevEntry = { slug: p.slug, title: p.title };
+      }
+      if (idx < siblings.length - 1) {
+        const n = siblings[idx + 1];
+        nextEntry = { slug: n.slug, title: n.title };
+      } else if (siblings.length > 1) {
+        // At the end — offer a jump back to the first post.
+        const f = siblings[0];
+        firstEntry = { slug: f.slug, title: f.title };
+      }
+    }
+  }
+
   return (
     <JournalContent
       slug={entry.slug}
@@ -73,6 +101,9 @@ export default async function JournalEntryPage({ params }: Props) {
       author={entry.author}
       tripTitle={publishedTrip?.title}
       tripSlug={publishedTrip?.slug}
+      prevEntry={prevEntry}
+      nextEntry={nextEntry}
+      firstEntry={firstEntry}
     />
   );
 }
