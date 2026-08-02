@@ -2,119 +2,141 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { TripSelect } from "@/components/TripSelect";
 import { useAuth } from "@/components/AuthProvider";
 
-interface Preview {
+interface NzPost {
   title: string;
-  dateText: string | null;
+  slug: string;
+  permalink: string;
   dateISO: string | null;
+  dateText: string | null;
   imageCount: number;
-  contentPreview: string;
-  contentLength: number;
 }
+
+type PostState =
+  | { state: "idle" }
+  | { state: "importing" }
+  | { state: "created"; message: string }
+  | { state: "skipped"; message: string }
+  | { state: "error"; message: string };
 
 export default function ImportPage() {
   const { user } = useAuth();
-  const [url, setUrl] = useState("");
-  const [tripId, setTripId] = useState("");
-  const [preview, setPreview] = useState<Preview | null>(null);
-  const [previewing, setPreviewing] = useState(false);
+  const [posts, setPosts] = useState<NzPost[]>([]);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [statuses, setStatuses] = useState<Record<string, PostState>>({});
+  const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<string | null>(null);
 
-  async function doPreview() {
+  async function loadList() {
     setError(null);
-    setResult(null);
-    setPreview(null);
-    if (!url.trim()) return;
-    setPreviewing(true);
+    setLoading(true);
     try {
-      const res = await fetch(`/api/import-preview?url=${encodeURIComponent(url.trim())}`);
+      const res = await fetch("/api/import-preview?nzlist=1");
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Preview failed");
-      setPreview(data);
+      if (!res.ok) throw new Error(data.error || "Failed to load");
+      setPosts(data.posts as NzPost[]);
+      setSelected(new Set((data.posts as NzPost[]).map((p) => p.permalink)));
+      setStatuses({});
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
-      setPreviewing(false);
+      setLoading(false);
     }
   }
 
-  async function doImport() {
-    setError(null);
-    setResult(null);
-    if (!url.trim() || !user) return;
+  function toggle(permalink: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(permalink)) next.delete(permalink);
+      else next.add(permalink);
+      return next;
+    });
+  }
+
+  async function importSelected() {
+    if (!user) return;
     setImporting(true);
-    try {
-      const token = await user.getIdToken();
-      const res = await fetch("/api/import-post", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ url: url.trim(), tripId: tripId || null }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Import failed");
-      if (data.skipped) {
-        setResult(`Skipped: ${data.reason}`);
-      } else {
-        setResult(
-          `Imported "${data.title}" (${data.imageCount} photo${
-            data.imageCount === 1 ? "" : "s"
-          }). View at /journal/${data.slug}`
-        );
-        setUrl("");
-        setPreview(null);
+    setError(null);
+    const toImport = posts.filter((p) => selected.has(p.permalink));
+    for (const p of toImport) {
+      setStatuses((s) => ({ ...s, [p.permalink]: { state: "importing" } }));
+      try {
+        const token = await user.getIdToken();
+        const res = await fetch("/api/import-post", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ url: p.permalink }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          setStatuses((s) => ({
+            ...s,
+            [p.permalink]: { state: "error", message: data.error || "failed" },
+          }));
+        } else if (data.skipped) {
+          setStatuses((s) => ({
+            ...s,
+            [p.permalink]: { state: "skipped", message: data.reason || "exists" },
+          }));
+        } else {
+          const loc = data.location ? ` · ${data.location}` : "";
+          setStatuses((s) => ({
+            ...s,
+            [p.permalink]: {
+              state: "created",
+              message: `${data.imageCount} photo${data.imageCount === 1 ? "" : "s"}${loc}`,
+            },
+          }));
+        }
+      } catch (e) {
+        setStatuses((s) => ({
+          ...s,
+          [p.permalink]: {
+            state: "error",
+            message: e instanceof Error ? e.message : String(e),
+          },
+        }));
       }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setImporting(false);
     }
+    setImporting(false);
   }
+
+  const fmtDate = (iso: string | null, text: string | null) =>
+    iso ? new Date(iso).toLocaleDateString() : text ?? "—";
 
   return (
     <div className="animate-fade-in-up max-w-3xl">
-      <h1 className="text-3xl font-mono font-bold mb-2">Import a post</h1>
+      <h1 className="text-3xl font-mono font-bold mb-2">Import New Zealand posts</h1>
       <p className="text-sm text-base-content/50 mb-6">
-        Paste a single post&apos;s <code>web.archive.org</code> link, preview it,
-        then import it into a trip. Nothing is saved until you tap Import.
+        Pulls the family blog&apos;s New Zealand posts (Sept–Oct 2017) into your{" "}
+        <strong>New Zealand 2017</strong> trip — text, photos, dates, and a map
+        pin where the place is obvious. Already-imported posts are skipped, so
+        it&apos;s safe to run more than once. Uncheck any you added by hand.
       </p>
-
-      <label className="text-xs text-base-content/40 font-mono block mb-1">
-        Archive URL
-      </label>
-      <input
-        type="url"
-        placeholder="https://web.archive.org/web/…/http://www.meneli.com/…"
-        value={url}
-        onChange={(e) => setUrl(e.target.value)}
-        className="input input-bordered input-sm font-mono text-sm w-full mb-4"
-      />
-
-      <div className="flex items-center gap-2 mb-4">
-        <label className="text-xs text-base-content/40 font-mono">Trip:</label>
-        <TripSelect value={tripId} onChange={setTripId} />
-      </div>
 
       <div className="flex gap-3 mb-6">
         <button
-          onClick={doPreview}
-          disabled={previewing || !url.trim()}
+          onClick={loadList}
+          disabled={loading}
           className="btn btn-outline btn-sm"
         >
-          {previewing ? <span className="loading loading-spinner loading-xs" /> : "Preview"}
+          {loading ? <span className="loading loading-spinner loading-xs" /> : "Load posts"}
         </button>
         <button
-          onClick={doImport}
-          disabled={importing || !preview}
+          onClick={importSelected}
+          disabled={importing || selected.size === 0 || posts.length === 0}
           className="btn btn-primary btn-sm"
         >
-          {importing ? <span className="loading loading-spinner loading-xs" /> : "Import"}
+          {importing ? (
+            <span className="loading loading-spinner loading-xs" />
+          ) : (
+            `Import ${selected.size} selected`
+          )}
         </button>
       </div>
 
@@ -123,37 +145,54 @@ export default function ImportPage() {
           <span>{error}</span>
         </div>
       )}
-      {result && (
-        <div className="alert alert-success text-sm mb-4">
-          <span>{result}</span>
-        </div>
-      )}
 
-      {preview && (
-        <div className="border border-base-content/10 rounded-xl p-4 bg-base-200/30">
-          <div className="text-xs font-mono text-base-content/50 mb-2 space-y-1">
-            <div>
-              <span className="text-base-content/40">Title:</span> {preview.title}
-            </div>
-            <div>
-              <span className="text-base-content/40">Date:</span>{" "}
-              {preview.dateISO
-                ? new Date(preview.dateISO).toLocaleDateString()
-                : preview.dateText ?? "— (will use today; edit after import)"}
-            </div>
-            <div>
-              <span className="text-base-content/40">Photos:</span> {preview.imageCount}
-            </div>
-            <div>
-              <span className="text-base-content/40">Content:</span> {preview.contentLength} chars
-            </div>
-          </div>
-          <div className="divider my-2 text-xs">preview</div>
-          <div
-            className="prose prose-invert prose-sm max-w-none prose-blog max-h-96 overflow-y-auto"
-            dangerouslySetInnerHTML={{ __html: preview.contentPreview }}
-          />
-        </div>
+      {posts.length > 0 && (
+        <ul className="space-y-2">
+          {posts.map((p) => {
+            const st = statuses[p.permalink]?.state ?? "idle";
+            return (
+              <li
+                key={p.permalink}
+                className="flex items-start gap-3 border border-base-content/10 rounded-lg p-3 bg-base-200/30"
+              >
+                <input
+                  type="checkbox"
+                  checked={selected.has(p.permalink)}
+                  onChange={() => toggle(p.permalink)}
+                  disabled={importing || st === "created"}
+                  className="checkbox checkbox-sm mt-0.5"
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="font-mono text-sm text-base-content/90 truncate">
+                    {p.title}
+                  </div>
+                  <div className="text-xs font-mono text-base-content/40">
+                    {fmtDate(p.dateISO, p.dateText)} · {p.imageCount} photo
+                    {p.imageCount === 1 ? "" : "s"}
+                  </div>
+                </div>
+                <div className="text-xs font-mono shrink-0 self-center">
+                  {st === "importing" && (
+                    <span className="loading loading-spinner loading-xs" />
+                  )}
+                  {st === "created" && (
+                    <span className="text-success">
+                      ✓ {statuses[p.permalink] && "message" in statuses[p.permalink]
+                        ? (statuses[p.permalink] as { message: string }).message
+                        : ""}
+                    </span>
+                  )}
+                  {st === "skipped" && <span className="text-base-content/40">skipped</span>}
+                  {st === "error" && (
+                    <span className="text-error break-all">
+                      {(statuses[p.permalink] as { message: string }).message}
+                    </span>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
       )}
 
       <div className="mt-8">

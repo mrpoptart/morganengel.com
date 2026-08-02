@@ -186,6 +186,37 @@ export function parseWeeblyListing(
   return posts;
 }
 
+// Approximate coordinates for the obvious New Zealand places, matched against a
+// post title so the trip route map can be populated. First match wins.
+const NZ_PLACES: { keys: string[]; label: string; lat: number; lng: number }[] = [
+  { keys: ["waitomo"], label: "Waitomo, New Zealand", lat: -38.2612, lng: 175.1007 },
+  { keys: ["hobbiton"], label: "Hobbiton, New Zealand", lat: -37.8721, lng: 175.6829 },
+  { keys: ["rotorua", "whakarewarewa"], label: "Rotorua, New Zealand", lat: -38.1368, lng: 176.2497 },
+  { keys: ["taupo", "waiotapu"], label: "Taupo, New Zealand", lat: -38.6857, lng: 176.0702 },
+  { keys: ["coromandel", "hot water beach", "hahei", "hehei"], label: "Coromandel, New Zealand", lat: -36.7621, lng: 175.498 },
+  { keys: ["hamilton"], label: "Hamilton, New Zealand", lat: -37.787, lng: 175.2793 },
+  { keys: ["franz josef", "glacier"], label: "Franz Josef Glacier, New Zealand", lat: -43.3891, lng: 170.1838 },
+  { keys: ["pancake rocks", "punakaiki"], label: "Punakaiki, New Zealand", lat: -42.1139, lng: 171.3369 },
+  { keys: ["christchurch"], label: "Christchurch, New Zealand", lat: -43.5321, lng: 172.6362 },
+  { keys: ["nelson"], label: "Nelson, New Zealand", lat: -41.2706, lng: 173.284 },
+  { keys: ["abel tasman"], label: "Abel Tasman, New Zealand", lat: -40.991, lng: 173.017 },
+  { keys: ["picton"], label: "Picton, New Zealand", lat: -41.292, lng: 174.0003 },
+  { keys: ["wellington"], label: "Wellington, New Zealand", lat: -41.2865, lng: 174.7762 },
+  { keys: ["auckland"], label: "Auckland, New Zealand", lat: -36.8485, lng: 174.7633 },
+];
+
+export function nzLocationForTitle(
+  title: string
+): { lat: number; lng: number; label: string } | null {
+  const t = title.toLowerCase();
+  for (const p of NZ_PLACES) {
+    if (p.keys.some((k) => t.includes(k))) {
+      return { lat: p.lat, lng: p.lng, label: p.label };
+    }
+  }
+  return null;
+}
+
 export function parseArchivedPost(rawHtml: string, pageUrl: string): ParsedPost {
   const cleaned = stripWaybackChrome(rawHtml);
   const root = parse(cleaned, { comment: false });

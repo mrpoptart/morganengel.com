@@ -2,18 +2,27 @@ import { NextResponse } from "next/server";
 import { parse } from "node-html-parser";
 import { adminDb, adminAuth, adminBucket } from "@/lib/firebase-admin";
 import { ADMIN_UIDS } from "@/lib/auth";
-import { parseArchivedPost } from "@/lib/import-parse";
+import {
+  parseArchivedPost,
+  parseWeeblyListing,
+  nzLocationForTitle,
+} from "@/lib/import-parse";
 import { Timestamp } from "firebase-admin/firestore";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
-function allowed(url: string): boolean {
+const ALLOWED_HOSTS = new Set(["web.archive.org", "meneli.weebly.com"]);
+
+function hostOf(url: string): string | null {
   try {
     const u = new URL(url);
-    return u.protocol === "https:" && u.hostname === "web.archive.org";
+    return u.protocol === "https:" && ALLOWED_HOSTS.has(u.hostname)
+      ? u.hostname
+      : null;
   } catch {
-    return false;
+    return null;
   }
 }
 
@@ -57,7 +66,7 @@ async function uploadRemoteImage(src: string): Promise<string | null> {
     const ct = res.headers.get("content-type");
     if (ct && !ct.startsWith("image/")) return null;
     const buf = Buffer.from(await res.arrayBuffer());
-    if (buf.length === 0) return null;
+    if (buf.length < 1024) return null; // skip spacers / 1x1 pixels
     const ext = extFromContentType(ct, src);
     const filename = `images/nz-${Date.now()}-${Math.random()
       .toString(36)
@@ -93,12 +102,24 @@ export async function POST(request: Request) {
 
   const body = await request.json().catch(() => ({}));
   const target: string = body.url;
-  const tripId: string | null = body.tripId || null;
-  if (!target || !allowed(target)) {
+  const host = hostOf(target);
+  if (!host) {
     return NextResponse.json(
-      { error: "Provide a https://web.archive.org/... url" },
+      { error: "Provide a https URL on an allowed host" },
       { status: 400 }
     );
+  }
+
+  // --- Resolve the destination trip (default: New Zealand 2017) ---
+  let tripId: string | null = body.tripId || null;
+  if (!tripId) {
+    const tripSlug: string = body.tripSlug || "new-zealand-2017";
+    const t = await adminDb
+      .collection("trips")
+      .where("slug", "==", tripSlug)
+      .limit(1)
+      .get();
+    if (!t.empty) tripId = t.docs[0].id;
   }
 
   // --- Fetch + parse ---
@@ -111,8 +132,27 @@ export async function POST(request: Request) {
       { status: 502 }
     );
   }
-  const parsed = parseArchivedPost(await res.text(), target);
-  const slug = slugify(parsed.title);
+  const html = await res.text();
+
+  let title: string;
+  let contentHtmlRaw: string;
+  let dateISO: string | null;
+  if (host === "meneli.weebly.com") {
+    const posts = parseWeeblyListing(html, target);
+    if (posts.length === 0) {
+      return NextResponse.json({ error: "No post found on page" }, { status: 422 });
+    }
+    title = posts[0].title;
+    contentHtmlRaw = posts[0].contentHtml;
+    dateISO = posts[0].dateISO;
+  } else {
+    const parsed = parseArchivedPost(html, target);
+    title = parsed.title;
+    contentHtmlRaw = parsed.contentHtml;
+    dateISO = parsed.dateISO;
+  }
+
+  const slug = slugify(title);
 
   // --- Dedupe: skip if an entry with this slug already exists ---
   const existing = await adminDb
@@ -121,24 +161,31 @@ export async function POST(request: Request) {
     .limit(1)
     .get();
   if (!existing.empty) {
-    return NextResponse.json({
-      skipped: true,
-      reason: "An entry with this title already exists.",
-      slug,
-    });
+    return NextResponse.json({ skipped: true, reason: "already exists", slug, title });
   }
 
-  // --- Re-host images and rewrite the content ---
-  const root = parse(parsed.contentHtml);
+  // --- Re-host images (in parallel) and rewrite the content ---
+  const root = parse(contentHtmlRaw);
+  const imgEls = root.querySelectorAll("img");
+  const srcs = Array.from(
+    new Set(
+      imgEls
+        .map((i) => i.getAttribute("src"))
+        .filter((s): s is string => !!s && !s.includes("editmysite.com"))
+    )
+  );
+  const entries = await Promise.all(
+    srcs.map(async (s) => [s, await uploadRemoteImage(s)] as const)
+  );
+  const urlMap = new Map(entries);
   const uploaded: string[] = [];
-  for (const img of root.querySelectorAll("img")) {
+  for (const img of imgEls) {
     const src = img.getAttribute("src");
-    if (!src) continue;
-    const url = await uploadRemoteImage(src);
-    if (url) {
-      img.setAttribute("src", url);
+    const newUrl = src ? urlMap.get(src) : null;
+    if (newUrl) {
+      img.setAttribute("src", newUrl);
       img.setAttribute("class", "rounded-lg max-w-full");
-      uploaded.push(url);
+      if (!uploaded.includes(newUrl)) uploaded.push(newUrl);
     } else {
       img.remove();
     }
@@ -146,17 +193,16 @@ export async function POST(request: Request) {
   const contentHtml = root.toString();
 
   const now = Timestamp.now();
-  const publishedAt = parsed.dateISO
-    ? Timestamp.fromDate(new Date(parsed.dateISO))
-    : now;
+  const publishedAt = dateISO ? Timestamp.fromDate(new Date(dateISO)) : now;
+  const location = nzLocationForTitle(title);
 
   const doc: Record<string, unknown> = {
-    title: parsed.title,
+    title,
     slug,
     content: contentHtml,
     excerpt: generateExcerpt(contentHtml),
     tags: ["travel", "new zealand"],
-    location: null,
+    location,
     gallery: [],
     tripId,
     author: name ?? "Morgan Engel",
@@ -173,8 +219,9 @@ export async function POST(request: Request) {
     created: true,
     id: ref.id,
     slug,
-    title: parsed.title,
+    title,
     imageCount: uploaded.length,
-    date: parsed.dateISO,
+    date: dateISO,
+    location: location?.label ?? null,
   });
 }
