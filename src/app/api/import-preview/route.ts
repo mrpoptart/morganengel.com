@@ -52,7 +52,25 @@ function structureReport(html: string) {
 
   const imgSamples = (html.match(/<img\b[^>]*>/gi) ?? []).slice(0, 8);
 
-  return { length: html.length, markerCounts, postLinks, archiveLinks, imgSamples, snippet };
+  // Pagination + gallery markup, to understand multi-page archives and where
+  // JS-gallery photos hide.
+  const pagIdx = html.search(/blog-pager|blog-pagination|>\s*Previous|>\s*Older|pagination/i);
+  const paginationHtml = pagIdx >= 0 ? html.slice(pagIdx, pagIdx + 1200) : "";
+  const galIdx = html.search(/wsite-image|imageGallery|gallery|w-gallery|"images":/i);
+  const galleryHtml = galIdx >= 0 ? html.slice(galIdx, galIdx + 1600) : "";
+  const dataImageAttrs = (html.match(/data-[a-z-]*(?:image|src|gallery)[^=]*="[^"]{0,200}"/gi) ?? []).slice(0, 6);
+
+  return {
+    length: html.length,
+    markerCounts,
+    postLinks,
+    archiveLinks,
+    imgSamples,
+    paginationHtml,
+    galleryHtml,
+    dataImageAttrs,
+    snippet,
+  };
 }
 
 // Read-only: fetches an archived page and returns the parsed post. Locked to
