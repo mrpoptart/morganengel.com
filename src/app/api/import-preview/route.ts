@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { parseArchivedPost } from "@/lib/import-parse";
+import { parseArchivedPost, parseWeeblyListing } from "@/lib/import-parse";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -82,6 +82,27 @@ export async function GET(request: Request) {
     }
     if (searchParams.get("structure") === "1") {
       return NextResponse.json(structureReport(html));
+    }
+    if (searchParams.get("list") === "1") {
+      const posts = parseWeeblyListing(html, target);
+      return NextResponse.json({
+        count: posts.length,
+        posts: posts.map((p) => ({
+          title: p.title,
+          slug: p.slug,
+          permalink: p.permalink,
+          dateText: p.dateText,
+          dateISO: p.dateISO,
+          imageCount: p.images.length,
+          images: p.images.slice(0, 4),
+          contentLength: p.contentHtml.length,
+          excerpt: p.contentHtml
+            .replace(/<[^>]+>/g, "")
+            .replace(/\s+/g, " ")
+            .trim()
+            .slice(0, 200),
+        })),
+      });
     }
     const parsed = parseArchivedPost(html, target);
     return NextResponse.json({

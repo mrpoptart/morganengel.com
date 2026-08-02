@@ -98,6 +98,94 @@ function matchDateString(html: string): string | null {
   return m ? m[0] : null;
 }
 
+export interface ParsedWeeblyPost {
+  title: string;
+  slug: string;
+  permalink: string;
+  dateText: string | null;
+  dateISO: string | null;
+  contentHtml: string;
+  images: string[];
+}
+
+function slugFromPermalink(permalink: string): string {
+  const m = permalink.match(/\/family-blog\/([a-z0-9-]+)/i);
+  return m ? m[1].toLowerCase() : "";
+}
+
+// Weebly rich text carries inline color/size styles that fight the site's dark
+// theme, plus zero-width-space junk. Strip inline styles and normalize so the
+// imported content adopts the site's own typography.
+function cleanContentHtml(html: string): string {
+  return html
+    .replace(/\sstyle="[^"]*"/gi, "")
+    .replace(/​|&#8203;|&#x200b;/gi, "")
+    .replace(/\sclass="paragraph"/gi, "")
+    .trim();
+}
+
+/**
+ * Parse one or more Weebly blog posts from a listing (blog index / month
+ * archive) or a single post permalink. Real posts are the elements whose id
+ * starts with "blog-post-" (the page <body> also carries a blog-post class).
+ */
+export function parseWeeblyListing(
+  rawHtml: string,
+  pageUrl: string
+): ParsedWeeblyPost[] {
+  const root = parse(rawHtml, { comment: false });
+  const posts: ParsedWeeblyPost[] = [];
+
+  const postEls = root
+    .querySelectorAll(".blog-post")
+    .filter((el) => (el.getAttribute("id") || "").startsWith("blog-post-"));
+
+  for (const el of postEls) {
+    const titleEl = el.querySelector("a.blog-title-link");
+    const title = (titleEl?.text || "Untitled").trim().replace(/\s+/g, " ");
+    const permalink = absolutizeUrl(titleEl?.getAttribute("href") || "", pageUrl);
+
+    const dateText =
+      el.querySelector(".blog-date .date-text")?.text.trim() ||
+      el.querySelector(".blog-date")?.text.trim() ||
+      null;
+    let dateISO: string | null = null;
+    if (dateText) {
+      const d = new Date(dateText); // Weebly uses MM/DD/YYYY
+      if (!Number.isNaN(d.getTime())) dateISO = d.toISOString();
+    }
+
+    const contentEl = el.querySelector(".blog-content");
+    const images: string[] = [];
+    if (contentEl) {
+      for (const img of contentEl.querySelectorAll("img")) {
+        const src = img.getAttribute("src") || img.getAttribute("data-src") || "";
+        const abs = absolutizeUrl(src, pageUrl);
+        if (abs) {
+          img.setAttribute("src", abs);
+          images.push(abs);
+        }
+      }
+      for (const a of contentEl.querySelectorAll("a")) {
+        const href = a.getAttribute("href");
+        if (href) a.setAttribute("href", absolutizeUrl(href, pageUrl));
+      }
+    }
+
+    posts.push({
+      title,
+      slug: slugFromPermalink(permalink) || title.toLowerCase().replace(/[^\w]+/g, "-"),
+      permalink,
+      dateText,
+      dateISO,
+      contentHtml: contentEl ? cleanContentHtml(contentEl.innerHTML) : "",
+      images,
+    });
+  }
+
+  return posts;
+}
+
 export function parseArchivedPost(rawHtml: string, pageUrl: string): ParsedPost {
   const cleaned = stripWaybackChrome(rawHtml);
   const root = parse(cleaned, { comment: false });
