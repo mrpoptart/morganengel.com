@@ -50,7 +50,9 @@ function structureReport(html: string) {
     new Set(html.match(/\/family-blog\/archives\/[0-9-]+/gi) ?? [])
   ).slice(0, 40);
 
-  return { length: html.length, markerCounts, postLinks, archiveLinks, snippet };
+  const imgSamples = (html.match(/<img\b[^>]*>/gi) ?? []).slice(0, 8);
+
+  return { length: html.length, markerCounts, postLinks, archiveLinks, imgSamples, snippet };
 }
 
 // Read-only: fetches an archived page and returns the parsed post. Locked to
