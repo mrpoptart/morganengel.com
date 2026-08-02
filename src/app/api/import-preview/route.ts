@@ -4,13 +4,53 @@ import { parseArchivedPost } from "@/lib/import-parse";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const ALLOWED_HOSTS = new Set(["web.archive.org", "meneli.weebly.com"]);
+
 function allowed(url: string): boolean {
   try {
     const u = new URL(url);
-    return u.protocol === "https:" && u.hostname === "web.archive.org";
+    return u.protocol === "https:" && ALLOWED_HOSTS.has(u.hostname);
   } catch {
     return false;
   }
+}
+
+// Diagnostic: report which known blog markers appear and dump a snippet of the
+// real markup so the parser can be tuned to the actual structure.
+function structureReport(html: string) {
+  const markers = [
+    "blog-post",
+    "blog-title-link",
+    "blog-title",
+    "blog-date",
+    "blog-content",
+    "blog-readmore",
+    "wsite-blog",
+    "article",
+    "/family-blog/",
+    "/archives/",
+    "uploads/",
+  ];
+  const markerCounts: Record<string, number> = {};
+  for (const m of markers) markerCounts[m] = html.split(m).length - 1;
+
+  const firstIdx = html.search(/blog-post|blog-title|<article/i);
+  const snippet =
+    firstIdx >= 0 ? html.slice(firstIdx, firstIdx + 3500) : html.slice(0, 3500);
+
+  // Collect candidate post links and month-archive links.
+  const postLinks = Array.from(
+    new Set(
+      (html.match(/\/family-blog\/[a-z0-9-]+/gi) ?? []).filter(
+        (h) => !h.includes("/archives/")
+      )
+    )
+  ).slice(0, 40);
+  const archiveLinks = Array.from(
+    new Set(html.match(/\/family-blog\/archives\/[0-9-]+/gi) ?? [])
+  ).slice(0, 40);
+
+  return { length: html.length, markerCounts, postLinks, archiveLinks, snippet };
 }
 
 // Read-only: fetches an archived page and returns the parsed post. Locked to
@@ -37,6 +77,9 @@ export async function GET(request: Request) {
     const html = await res.text();
     if (searchParams.get("raw") === "1") {
       return NextResponse.json({ length: html.length, html });
+    }
+    if (searchParams.get("structure") === "1") {
+      return NextResponse.json(structureReport(html));
     }
     const parsed = parseArchivedPost(html, target);
     return NextResponse.json({
