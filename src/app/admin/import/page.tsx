@@ -28,6 +28,33 @@ export default function ImportPage() {
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notesRunning, setNotesRunning] = useState(false);
+  const [notesResult, setNotesResult] = useState<string | null>(null);
+
+  async function addNotes() {
+    if (!user) return;
+    setNotesRunning(true);
+    setNotesResult(null);
+    setError(null);
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch("/api/import-notes", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed");
+      const skipped = data.total - data.created;
+      setNotesResult(
+        `Added ${data.created} post${data.created === 1 ? "" : "s"}` +
+          (skipped ? `, skipped ${skipped} already there.` : ".")
+      );
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setNotesRunning(false);
+    }
+  }
 
   async function loadList() {
     setError(null);
@@ -119,6 +146,28 @@ export default function ImportPage() {
         it&apos;s safe to run more than once. Uncheck any you added by hand.
       </p>
 
+      <div className="border border-base-content/10 rounded-xl p-4 bg-base-200/30 mb-8">
+        <div className="font-mono text-sm mb-1">Trip notes (Oct 19–26)</div>
+        <p className="text-xs text-base-content/50 mb-3">
+          Adds the eight hand-written entries from the end of the trip, dated and
+          map-pinned, text only. Safe to run more than once. Add photos after in
+          the editor.
+        </p>
+        <button onClick={addNotes} disabled={notesRunning} className="btn btn-primary btn-sm">
+          {notesRunning ? (
+            <span className="loading loading-spinner loading-xs" />
+          ) : (
+            "Add the 8 notes posts"
+          )}
+        </button>
+        {notesResult && (
+          <div className="alert alert-success text-sm mt-3">
+            <span>{notesResult}</span>
+          </div>
+        )}
+      </div>
+
+      <div className="font-mono text-sm mb-3">Weebly blog posts</div>
       <div className="flex gap-3 mb-6">
         <button
           onClick={loadList}
