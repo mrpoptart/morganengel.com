@@ -159,7 +159,14 @@ export function parseWeeblyListing(
     const images: string[] = [];
     if (contentEl) {
       for (const img of contentEl.querySelectorAll("img")) {
-        const src = img.getAttribute("src") || img.getAttribute("data-src") || "";
+        let src = img.getAttribute("src") || img.getAttribute("data-src") || "";
+        // Weebly gallery thumbnails are wrapped in an <a> linking the
+        // full-resolution original (…_orig.jpg); prefer that when present.
+        const parent = img.parentNode as HTMLElement | null;
+        const href = parent?.getAttribute?.("href");
+        if (href && /\.(jpe?g|png|gif|webp)(\?|$)/i.test(href)) {
+          src = href;
+        }
         const abs = absolutizeUrl(src, pageUrl);
         if (abs) {
           img.setAttribute("src", abs);
