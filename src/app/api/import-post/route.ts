@@ -102,6 +102,10 @@ export async function POST(request: Request) {
 
   const body = await request.json().catch(() => ({}));
   const target: string = body.url;
+  const tags: string[] =
+    Array.isArray(body.tags) && body.tags.length
+      ? body.tags.map(String)
+      : ["travel", "new zealand"];
   const host = hostOf(target);
   if (!host) {
     return NextResponse.json(
@@ -201,7 +205,7 @@ export async function POST(request: Request) {
     slug,
     content: contentHtml,
     excerpt: generateExcerpt(contentHtml),
-    tags: ["travel", "new zealand"],
+    tags,
     location,
     gallery: [],
     tripId,

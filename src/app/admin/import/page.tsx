@@ -4,6 +4,20 @@ import { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/AuthProvider";
 
+const CATEGORIES: { slug: string; label: string; trip: boolean; note?: string }[] = [
+  { slug: "ireland", label: "Ireland", trip: true },
+  { slug: "costa-rica", label: "Costa Rica", trip: true },
+  { slug: "michigan", label: "Michigan", trip: true },
+  { slug: "arizona", label: "Arizona", trip: true },
+  { slug: "chicago", label: "Chicago", trip: true },
+  { slug: "new-mexico", label: "New Mexico", trip: true },
+  { slug: "orange-county", label: "Orange County", trip: true },
+  { slug: "torch-lake", label: "Torch Lake", trip: false, note: "in Michigan" },
+  { slug: "camping", label: "Camping", trip: false, note: "tag" },
+  { slug: "cars", label: "Cars", trip: false, note: "tag" },
+  { slug: "kids", label: "Kids", trip: false, note: "tag" },
+];
+
 interface NzPost {
   title: string;
   slug: string;
@@ -30,6 +44,92 @@ export default function ImportPage() {
   const [error, setError] = useState<string | null>(null);
   const [notesRunning, setNotesRunning] = useState(false);
   const [notesResult, setNotesResult] = useState<string | null>(null);
+  const [catSelected, setCatSelected] = useState<Set<string>>(
+    new Set(CATEGORIES.filter((c) => c.trip).map((c) => c.slug))
+  );
+  const [catStatus, setCatStatus] = useState<Record<string, string>>({});
+  const [catRunning, setCatRunning] = useState(false);
+
+  function toggleCat(slug: string) {
+    setCatSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(slug)) next.delete(slug);
+      else next.add(slug);
+      return next;
+    });
+  }
+
+  async function importCategories() {
+    if (!user) return;
+    setCatRunning(true);
+    setError(null);
+    const chosen = CATEGORIES.filter((c) => catSelected.has(c.slug));
+    for (const cat of chosen) {
+      try {
+        setCatStatus((s) => ({ ...s, [cat.slug]: "loading posts…" }));
+        const listRes = await fetch(`/api/import-preview?catlist=${cat.slug}`);
+        const list = await listRes.json();
+        if (!listRes.ok) throw new Error(list.error || "list failed");
+        if (!list.count) {
+          setCatStatus((s) => ({ ...s, [cat.slug]: "no posts found" }));
+          continue;
+        }
+        const year = list.earliest ? new Date(list.earliest).getFullYear() : "";
+        const tripTitle = year ? `${cat.label} ${year}` : cat.label;
+        const tripSlug = year ? `${cat.slug}-${year}` : cat.slug;
+
+        let token = await user.getIdToken();
+        const tripRes = await fetch("/api/import-trip", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ slug: tripSlug, title: tripTitle, publishedAt: list.latest }),
+        });
+        const trip = await tripRes.json();
+        if (!tripRes.ok) throw new Error(trip.error || "trip failed");
+
+        let created = 0;
+        let skipped = 0;
+        let errors = 0;
+        for (let i = 0; i < list.posts.length; i++) {
+          const post = list.posts[i];
+          setCatStatus((s) => ({
+            ...s,
+            [cat.slug]: `${tripTitle}: importing ${i + 1}/${list.count}…`,
+          }));
+          try {
+            token = await user.getIdToken();
+            const r = await fetch("/api/import-post", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+              body: JSON.stringify({
+                url: post.permalink,
+                tripId: trip.tripId,
+                tags: ["travel", cat.slug],
+              }),
+            });
+            const data = await r.json();
+            if (!r.ok) errors++;
+            else if (data.skipped) skipped++;
+            else created++;
+          } catch {
+            errors++;
+          }
+        }
+        setCatStatus((s) => ({
+          ...s,
+          [cat.slug]: `${tripTitle}: ${created} added${skipped ? `, ${skipped} skipped` : ""}${
+            errors ? `, ${errors} failed` : ""
+          }`,
+        }));
+      } catch (e) {
+        setCatStatus((s) => ({
+          ...s,
+          [cat.slug]: `error: ${e instanceof Error ? e.message : String(e)}`,
+        }));
+      }
+    }
+    setCatRunning(false);
+  }
 
   async function addNotes() {
     if (!user) return;
@@ -145,6 +245,55 @@ export default function ImportPage() {
         pin where the place is obvious. Already-imported posts are skipped, so
         it&apos;s safe to run more than once. Uncheck any you added by hand.
       </p>
+
+      <div className="border border-base-content/10 rounded-xl p-4 bg-base-200/30 mb-8">
+        <div className="font-mono text-sm mb-1">Trips from Weebly categories</div>
+        <p className="text-xs text-base-content/50 mb-3">
+          Each ticked category becomes a trip (named with its year), and its
+          posts are imported into it with full-res photos. Goes one post at a
+          time to stay under Weebly&apos;s rate limits, so big trips take a few
+          minutes. Safe to re-run — already-imported posts are skipped.
+        </p>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1 mb-3">
+          {CATEGORIES.map((c) => (
+            <label key={c.slug} className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={catSelected.has(c.slug)}
+                onChange={() => toggleCat(c.slug)}
+                disabled={catRunning}
+                className="checkbox checkbox-xs"
+              />
+              <span className="truncate">
+                {c.label}
+                {c.note && (
+                  <span className="text-base-content/40 text-xs"> ({c.note})</span>
+                )}
+              </span>
+            </label>
+          ))}
+        </div>
+        <button
+          onClick={importCategories}
+          disabled={catRunning || catSelected.size === 0}
+          className="btn btn-primary btn-sm"
+        >
+          {catRunning ? (
+            <span className="loading loading-spinner loading-xs" />
+          ) : (
+            `Import ${catSelected.size} as trips`
+          )}
+        </button>
+        {Object.keys(catStatus).length > 0 && (
+          <ul className="mt-3 space-y-1 text-xs font-mono">
+            {CATEGORIES.filter((c) => catStatus[c.slug]).map((c) => (
+              <li key={c.slug} className="text-base-content/70 break-all">
+                {catStatus[c.slug]}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
       <div className="border border-base-content/10 rounded-xl p-4 bg-base-200/30 mb-8">
         <div className="font-mono text-sm mb-1">Trip notes (Oct 19–26)</div>
