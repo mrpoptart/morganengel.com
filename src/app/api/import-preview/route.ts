@@ -49,6 +49,9 @@ function structureReport(html: string) {
   const archiveLinks = Array.from(
     new Set(html.match(/\/family-blog\/archives\/[0-9-]+/gi) ?? [])
   ).slice(0, 40);
+  const categoryLinks = Array.from(
+    new Set(html.match(/\/family-blog\/category\/[a-z0-9-]+/gi) ?? [])
+  ).slice(0, 60);
 
   const imgSamples = (html.match(/<img\b[^>]*>/gi) ?? []).slice(0, 8);
 
@@ -65,6 +68,7 @@ function structureReport(html: string) {
     markerCounts,
     postLinks,
     archiveLinks,
+    categoryLinks,
     imgSamples,
     paginationHtml,
     galleryHtml,
