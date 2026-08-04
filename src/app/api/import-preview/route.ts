@@ -123,10 +123,62 @@ async function handleNzList() {
   return NextResponse.json({ count: collected.length, posts: collected });
 }
 
+// Crawl a blog category's pagination and collect all of its posts.
+async function handleCatList(slug: string) {
+  if (!/^[a-z0-9-]+$/.test(slug)) {
+    return NextResponse.json({ error: "bad category" }, { status: 400 });
+  }
+  const seen = new Set<string>();
+  const collected: Array<{
+    title: string;
+    slug: string;
+    permalink: string;
+    dateISO: string | null;
+    imageCount: number;
+  }> = [];
+  for (let page = 1; page <= 12; page++) {
+    const pageUrl =
+      page === 1
+        ? `https://meneli.weebly.com/family-blog/category/${slug}`
+        : `https://meneli.weebly.com/family-blog/category/${slug}/previous/${page}`;
+    const r = await fetch(pageUrl, {
+      headers: { "User-Agent": "morganengel-import/1.0" },
+    });
+    if (!r.ok) break;
+    const posts = parseWeeblyListing(await r.text(), pageUrl);
+    let added = 0;
+    for (const p of posts) {
+      if (seen.has(p.slug)) continue;
+      seen.add(p.slug);
+      collected.push({
+        title: p.title,
+        slug: p.slug,
+        permalink: p.permalink,
+        dateISO: p.dateISO,
+        imageCount: p.images.length,
+      });
+      added++;
+    }
+    if (added === 0) break; // no new posts -> pagination exhausted
+  }
+  collected.sort((a, b) => (a.dateISO || "").localeCompare(b.dateISO || ""));
+  const dated = collected.filter((p) => p.dateISO);
+  return NextResponse.json({
+    count: collected.length,
+    earliest: dated[0]?.dateISO ?? null,
+    latest: dated[dated.length - 1]?.dateISO ?? null,
+    posts: collected,
+  });
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   if (searchParams.get("nzlist") === "1") {
     return handleNzList();
+  }
+  const cat = searchParams.get("catlist");
+  if (cat) {
+    return handleCatList(cat);
   }
   const target = searchParams.get("url");
   if (!target || !allowed(target)) {
