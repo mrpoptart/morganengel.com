@@ -29,6 +29,10 @@ export default function ImportPage() {
   const [notesRunning, setNotesRunning] = useState(false);
   const [notesResult, setNotesResult] = useState<string | null>(null);
 
+  const [dupRunning, setDupRunning] = useState(false);
+  const [dupList, setDupList] = useState<{ slug: string; title: string }[] | null>(null);
+  const [dupResult, setDupResult] = useState<string | null>(null);
+
   async function loadPosts() {
     setError(null);
     setLoading(true);
@@ -113,6 +117,45 @@ export default function ImportPage() {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setNotesRunning(false);
+    }
+  }
+
+  async function dedupe(confirm: boolean) {
+    if (!user) return;
+    setDupRunning(true);
+    setDupResult(null);
+    setError(null);
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch("/api/dedupe-posts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ confirm }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed");
+      if (confirm) {
+        setDupList(null);
+        setDupResult(
+          `Deleted ${data.deleted} duplicate blog post${data.deleted === 1 ? "" : "s"}.`
+        );
+      } else {
+        setDupList(
+          (data.duplicates as { slug: string; title: string }[]).map((d) => ({
+            slug: d.slug,
+            title: d.title,
+          }))
+        );
+        setDupResult(
+          data.count === 0
+            ? "No duplicates found — nothing to clean up."
+            : `Found ${data.count} blog post${data.count === 1 ? "" : "s"} that also exist as journal entries.`
+        );
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setDupRunning(false);
     }
   }
 
@@ -227,6 +270,62 @@ export default function ImportPage() {
           <div className="alert alert-success text-sm mt-3">
             <span>{notesResult}</span>
           </div>
+        )}
+      </div>
+
+      <div className="border border-warning/30 rounded-xl p-4 bg-warning/5 mb-8">
+        <div className="font-mono text-sm mb-1">Remove duplicate blog posts</div>
+        <p className="text-xs text-base-content/50 mb-3">
+          The old blog migration put travel posts into the main blog. Once
+          they&apos;re imported here as trip journal entries, the blog copies are
+          duplicates (same slug shows up at both <code>/posts/…</code> and{" "}
+          <code>/journal/…</code>). This finds every blog post that also exists
+          as a journal entry and deletes only those. Non-travel posts are left
+          alone. Preview first.
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => dedupe(false)}
+            disabled={dupRunning}
+            className="btn btn-outline btn-sm"
+          >
+            {dupRunning && dupList === null ? (
+              <span className="loading loading-spinner loading-xs" />
+            ) : (
+              "Find duplicates"
+            )}
+          </button>
+          {dupList && dupList.length > 0 && (
+            <button
+              onClick={() => dedupe(true)}
+              disabled={dupRunning}
+              className="btn btn-error btn-sm"
+            >
+              {dupRunning ? (
+                <span className="loading loading-spinner loading-xs" />
+              ) : (
+                `Delete ${dupList.length} blog post${dupList.length === 1 ? "" : "s"}`
+              )}
+            </button>
+          )}
+        </div>
+        {dupResult && (
+          <div className="alert alert-info text-sm mt-3">
+            <span>{dupResult}</span>
+          </div>
+        )}
+        {dupList && dupList.length > 0 && (
+          <ul className="mt-3 space-y-1">
+            {dupList.map((d) => (
+              <li
+                key={d.slug}
+                className="text-xs font-mono text-base-content/60 flex items-center gap-2"
+              >
+                <span className="truncate">{d.title}</span>
+                <span className="text-base-content/30">/posts/{d.slug}</span>
+              </li>
+            ))}
+          </ul>
         )}
       </div>
 
