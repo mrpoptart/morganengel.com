@@ -3,6 +3,124 @@ import { parseArchivedPost, parseWeeblyListing } from "@/lib/import-parse";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
+
+const BLOG = "https://meneli.weebly.com/family-blog";
+// Categories that name a trip (not cross-cutting tags).
+const TRIP_CATEGORIES = [
+  "ireland",
+  "costa-rica",
+  "michigan",
+  "arizona",
+  "chicago",
+  "new-mexico",
+  "orange-county",
+];
+
+async function fetchWeebly(url: string, tries = 4): Promise<string | null> {
+  for (let i = 0; i < tries; i++) {
+    const r = await fetch(url, {
+      headers: { "User-Agent": "morganengel-import/1.0" },
+    });
+    if (r.ok) return r.text();
+    if (r.status === 429) {
+      await new Promise((res) => setTimeout(res, 1200 * (i + 1)));
+      continue;
+    }
+    return null;
+  }
+  return null;
+}
+
+interface PlanPost {
+  slug: string;
+  title: string;
+  permalink: string;
+  dateISO: string;
+  imageCount: number;
+}
+
+// Crawl the whole blog, cluster posts into trips by date gaps, and name each
+// cluster from the category its posts belong to.
+async function handlePlan() {
+  // 1. Crawl every post via the working main-feed pagination.
+  const master: PlanPost[] = [];
+  const seen = new Set<string>();
+  for (let page = 1; page <= 40; page++) {
+    const url = page === 1 ? BLOG : `${BLOG}/previous/${page}`;
+    const html = await fetchWeebly(url);
+    if (!html) break;
+    let added = 0;
+    for (const p of parseWeeblyListing(html, url)) {
+      if (!p.dateISO || seen.has(p.slug)) continue;
+      seen.add(p.slug);
+      master.push({
+        slug: p.slug,
+        title: p.title,
+        permalink: p.permalink,
+        dateISO: p.dateISO,
+        imageCount: p.images.length,
+      });
+      added++;
+    }
+    if (added === 0) break;
+  }
+  master.sort((a, b) => a.dateISO.localeCompare(b.dateISO));
+
+  // 2. Cluster by date gaps (a trip is a run of near-daily posts).
+  const GAP_MS = 12 * 86400000;
+  const clusters: PlanPost[][] = [];
+  let cur: PlanPost[] = [];
+  for (const p of master) {
+    if (
+      cur.length &&
+      Date.parse(p.dateISO) - Date.parse(cur[cur.length - 1].dateISO) > GAP_MS
+    ) {
+      clusters.push(cur);
+      cur = [];
+    }
+    cur.push(p);
+  }
+  if (cur.length) clusters.push(cur);
+
+  // 3. Map each category's (visible) posts back to the category, to name clusters.
+  const seedToCat = new Map<string, string>();
+  for (const cat of TRIP_CATEGORIES) {
+    const html = await fetchWeebly(`${BLOG}/category/${cat}`);
+    if (!html) continue;
+    for (const p of parseWeeblyListing(html, BLOG)) {
+      if (!seedToCat.has(p.slug)) seedToCat.set(p.slug, cat);
+    }
+  }
+
+  // 4. Name clusters by their dominant category; keep only named ones (trips).
+  const trips = clusters
+    .map((cluster) => {
+      const counts: Record<string, number> = {};
+      for (const p of cluster) {
+        const c = seedToCat.get(p.slug);
+        if (c) counts[c] = (counts[c] || 0) + 1;
+      }
+      const category =
+        Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+      return {
+        category,
+        year: new Date(cluster[0].dateISO).getUTCFullYear(),
+        count: cluster.length,
+        start: cluster[0].dateISO,
+        end: cluster[cluster.length - 1].dateISO,
+        posts: cluster,
+      };
+    })
+    .filter((t) => t.category);
+
+  return NextResponse.json({
+    masterCount: master.length,
+    clusterCount: clusters.length,
+    tripCount: trips.length,
+    trips,
+  });
+}
 
 const ALLOWED_HOSTS = new Set(["web.archive.org", "meneli.weebly.com"]);
 
@@ -173,6 +291,9 @@ async function handleCatList(slug: string) {
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
+  if (searchParams.get("plan") === "1") {
+    return handlePlan();
+  }
   if (searchParams.get("nzlist") === "1") {
     return handleNzList();
   }
