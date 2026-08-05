@@ -3,132 +3,92 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/AuthProvider";
+import { TripSelect } from "@/components/TripSelect";
 
-const CATEGORIES: { slug: string; label: string; trip: boolean; note?: string }[] = [
-  { slug: "ireland", label: "Ireland", trip: true },
-  { slug: "costa-rica", label: "Costa Rica", trip: true },
-  { slug: "michigan", label: "Michigan", trip: true },
-  { slug: "arizona", label: "Arizona", trip: true },
-  { slug: "chicago", label: "Chicago", trip: true },
-  { slug: "new-mexico", label: "New Mexico", trip: true },
-  { slug: "orange-county", label: "Orange County", trip: true },
-  { slug: "torch-lake", label: "Torch Lake", trip: false, note: "in Michigan" },
-  { slug: "camping", label: "Camping", trip: false, note: "tag" },
-  { slug: "cars", label: "Cars", trip: false, note: "tag" },
-  { slug: "kids", label: "Kids", trip: false, note: "tag" },
-];
-
-interface NzPost {
-  title: string;
+interface BlogPost {
   slug: string;
+  title: string;
   permalink: string;
-  dateISO: string | null;
-  dateText: string | null;
+  dateISO: string;
   imageCount: number;
+  tags: string[];
 }
 
-type PostState =
-  | { state: "idle" }
-  | { state: "importing" }
-  | { state: "created"; message: string }
-  | { state: "skipped"; message: string }
-  | { state: "error"; message: string };
+type PostState = "idle" | "importing" | "created" | "skipped" | "error";
 
 export default function ImportPage() {
   const { user } = useAuth();
-  const [posts, setPosts] = useState<NzPost[]>([]);
+  const [posts, setPosts] = useState<BlogPost[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [statuses, setStatuses] = useState<Record<string, PostState>>({});
+  const [tripId, setTripId] = useState("");
+  const [statuses, setStatuses] = useState<Record<string, { state: PostState; msg?: string }>>({});
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
   const [notesRunning, setNotesRunning] = useState(false);
   const [notesResult, setNotesResult] = useState<string | null>(null);
-  const [catSelected, setCatSelected] = useState<Set<string>>(
-    new Set(CATEGORIES.filter((c) => c.trip).map((c) => c.slug))
-  );
-  const [catStatus, setCatStatus] = useState<Record<string, string>>({});
-  const [catRunning, setCatRunning] = useState(false);
 
-  function toggleCat(slug: string) {
-    setCatSelected((prev) => {
+  async function loadPosts() {
+    setError(null);
+    setLoading(true);
+    try {
+      const res = await fetch("/api/import-preview?allposts=1");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to load");
+      setPosts(data.posts as BlogPost[]);
+      setSelected(new Set());
+      setStatuses({});
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function toggle(permalink: string) {
+    setSelected((prev) => {
       const next = new Set(prev);
-      if (next.has(slug)) next.delete(slug);
-      else next.add(slug);
+      if (next.has(permalink)) next.delete(permalink);
+      else next.add(permalink);
       return next;
     });
   }
 
-  async function importCategories() {
-    if (!user) return;
-    setCatRunning(true);
+  async function importSelected() {
+    if (!user || !tripId) return;
+    setImporting(true);
     setError(null);
-    const chosen = CATEGORIES.filter((c) => catSelected.has(c.slug));
-    for (const cat of chosen) {
+    const toImport = posts.filter((p) => selected.has(p.permalink));
+    for (const p of toImport) {
+      setStatuses((s) => ({ ...s, [p.permalink]: { state: "importing" } }));
       try {
-        setCatStatus((s) => ({ ...s, [cat.slug]: "loading posts…" }));
-        const listRes = await fetch(`/api/import-preview?catlist=${cat.slug}`);
-        const list = await listRes.json();
-        if (!listRes.ok) throw new Error(list.error || "list failed");
-        if (!list.count) {
-          setCatStatus((s) => ({ ...s, [cat.slug]: "no posts found" }));
-          continue;
-        }
-        const year = list.earliest ? new Date(list.earliest).getFullYear() : "";
-        const tripTitle = year ? `${cat.label} ${year}` : cat.label;
-        const tripSlug = year ? `${cat.slug}-${year}` : cat.slug;
-
-        let token = await user.getIdToken();
-        const tripRes = await fetch("/api/import-trip", {
+        const token = await user.getIdToken();
+        const res = await fetch("/api/import-post", {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ slug: tripSlug, title: tripTitle, publishedAt: list.latest }),
+          body: JSON.stringify({
+            url: p.permalink,
+            tripId,
+            tags: ["travel", ...p.tags],
+          }),
         });
-        const trip = await tripRes.json();
-        if (!tripRes.ok) throw new Error(trip.error || "trip failed");
-
-        let created = 0;
-        let skipped = 0;
-        let errors = 0;
-        for (let i = 0; i < list.posts.length; i++) {
-          const post = list.posts[i];
-          setCatStatus((s) => ({
+        const data = await res.json();
+        if (!res.ok) {
+          setStatuses((s) => ({ ...s, [p.permalink]: { state: "error", msg: data.error || "failed" } }));
+        } else if (data.skipped) {
+          setStatuses((s) => ({ ...s, [p.permalink]: { state: "skipped" } }));
+        } else {
+          setStatuses((s) => ({
             ...s,
-            [cat.slug]: `${tripTitle}: importing ${i + 1}/${list.count}…`,
+            [p.permalink]: { state: "created", msg: `${data.imageCount} photo${data.imageCount === 1 ? "" : "s"}` },
           }));
-          try {
-            token = await user.getIdToken();
-            const r = await fetch("/api/import-post", {
-              method: "POST",
-              headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-              body: JSON.stringify({
-                url: post.permalink,
-                tripId: trip.tripId,
-                tags: ["travel", cat.slug],
-              }),
-            });
-            const data = await r.json();
-            if (!r.ok) errors++;
-            else if (data.skipped) skipped++;
-            else created++;
-          } catch {
-            errors++;
-          }
         }
-        setCatStatus((s) => ({
-          ...s,
-          [cat.slug]: `${tripTitle}: ${created} added${skipped ? `, ${skipped} skipped` : ""}${
-            errors ? `, ${errors} failed` : ""
-          }`,
-        }));
       } catch (e) {
-        setCatStatus((s) => ({
-          ...s,
-          [cat.slug]: `error: ${e instanceof Error ? e.message : String(e)}`,
-        }));
+        setStatuses((s) => ({ ...s, [p.permalink]: { state: "error", msg: e instanceof Error ? e.message : String(e) } }));
       }
     }
-    setCatRunning(false);
+    setImporting(false);
   }
 
   async function addNotes() {
@@ -156,187 +116,57 @@ export default function ImportPage() {
     }
   }
 
-  async function loadList() {
-    setError(null);
-    setLoading(true);
-    try {
-      const res = await fetch("/api/import-preview?nzlist=1");
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to load");
-      setPosts(data.posts as NzPost[]);
-      setSelected(new Set((data.posts as NzPost[]).map((p) => p.permalink)));
-      setStatuses({});
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function toggle(permalink: string) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(permalink)) next.delete(permalink);
-      else next.add(permalink);
-      return next;
-    });
-  }
-
-  async function importSelected() {
-    if (!user) return;
-    setImporting(true);
-    setError(null);
-    const toImport = posts.filter((p) => selected.has(p.permalink));
-    for (const p of toImport) {
-      setStatuses((s) => ({ ...s, [p.permalink]: { state: "importing" } }));
-      try {
-        const token = await user.getIdToken();
-        const res = await fetch("/api/import-post", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ url: p.permalink }),
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          setStatuses((s) => ({
-            ...s,
-            [p.permalink]: { state: "error", message: data.error || "failed" },
-          }));
-        } else if (data.skipped) {
-          setStatuses((s) => ({
-            ...s,
-            [p.permalink]: { state: "skipped", message: data.reason || "exists" },
-          }));
-        } else {
-          const loc = data.location ? ` · ${data.location}` : "";
-          setStatuses((s) => ({
-            ...s,
-            [p.permalink]: {
-              state: "created",
-              message: `${data.imageCount} photo${data.imageCount === 1 ? "" : "s"}${loc}`,
-            },
-          }));
-        }
-      } catch (e) {
-        setStatuses((s) => ({
-          ...s,
-          [p.permalink]: {
-            state: "error",
-            message: e instanceof Error ? e.message : String(e),
-          },
-        }));
-      }
-    }
-    setImporting(false);
-  }
-
-  const fmtDate = (iso: string | null, text: string | null) =>
-    iso ? new Date(iso).toLocaleDateString() : text ?? "—";
+  const fmtDate = (iso: string) => new Date(iso).toLocaleDateString();
 
   return (
     <div className="animate-fade-in-up max-w-3xl">
-      <h1 className="text-3xl font-mono font-bold mb-2">Import New Zealand posts</h1>
+      <h1 className="text-3xl font-mono font-bold mb-2">Import from the blog</h1>
       <p className="text-sm text-base-content/50 mb-6">
-        Pulls the family blog&apos;s New Zealand posts (Sept–Oct 2017) into your{" "}
-        <strong>New Zealand 2017</strong> trip — text, photos, dates, and a map
-        pin where the place is obvious. Already-imported posts are skipped, so
-        it&apos;s safe to run more than once. Uncheck any you added by hand.
+        Load every post from the old Weebly blog, tick the ones you want, pick a
+        trip, and import them. Make the trip first (+ New → New Trip). Photos come
+        in full-res; already-imported posts are skipped, so it&apos;s safe to
+        re-run.
       </p>
 
-      <div className="border border-base-content/10 rounded-xl p-4 bg-base-200/30 mb-8">
-        <div className="font-mono text-sm mb-1">Trips from Weebly categories</div>
-        <p className="text-xs text-base-content/50 mb-3">
-          Each ticked category becomes a trip (named with its year), and its
-          posts are imported into it with full-res photos. Goes one post at a
-          time to stay under Weebly&apos;s rate limits, so big trips take a few
-          minutes. Safe to re-run — already-imported posts are skipped.
-        </p>
-        <div className="grid grid-cols-2 gap-x-4 gap-y-1 mb-3">
-          {CATEGORIES.map((c) => (
-            <label key={c.slug} className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={catSelected.has(c.slug)}
-                onChange={() => toggleCat(c.slug)}
-                disabled={catRunning}
-                className="checkbox checkbox-xs"
-              />
-              <span className="truncate">
-                {c.label}
-                {c.note && (
-                  <span className="text-base-content/40 text-xs"> ({c.note})</span>
-                )}
-              </span>
-            </label>
-          ))}
+      <div className="flex flex-wrap items-center gap-3 mb-4">
+        <button onClick={loadPosts} disabled={loading} className="btn btn-outline btn-sm">
+          {loading ? <span className="loading loading-spinner loading-xs" /> : "Load all posts"}
+        </button>
+        {posts.length > 0 && (
+          <>
+            <button
+              onClick={() => setSelected(new Set(posts.map((p) => p.permalink)))}
+              className="btn btn-ghost btn-xs"
+            >
+              Select all
+            </button>
+            <button onClick={() => setSelected(new Set())} className="btn btn-ghost btn-xs">
+              Select none
+            </button>
+            <span className="text-xs font-mono text-base-content/40">
+              {posts.length} posts · {selected.size} picked
+            </span>
+          </>
+        )}
+      </div>
+
+      {posts.length > 0 && (
+        <div className="flex flex-wrap items-center gap-3 mb-4 sticky top-0 bg-base-100/90 backdrop-blur py-2 z-10">
+          <label className="text-xs text-base-content/40 font-mono">Into trip:</label>
+          <TripSelect value={tripId} onChange={setTripId} />
+          <button
+            onClick={importSelected}
+            disabled={importing || selected.size === 0 || !tripId}
+            className="btn btn-primary btn-sm"
+          >
+            {importing ? (
+              <span className="loading loading-spinner loading-xs" />
+            ) : (
+              `Import ${selected.size} selected`
+            )}
+          </button>
         </div>
-        <button
-          onClick={importCategories}
-          disabled={catRunning || catSelected.size === 0}
-          className="btn btn-primary btn-sm"
-        >
-          {catRunning ? (
-            <span className="loading loading-spinner loading-xs" />
-          ) : (
-            `Import ${catSelected.size} as trips`
-          )}
-        </button>
-        {Object.keys(catStatus).length > 0 && (
-          <ul className="mt-3 space-y-1 text-xs font-mono">
-            {CATEGORIES.filter((c) => catStatus[c.slug]).map((c) => (
-              <li key={c.slug} className="text-base-content/70 break-all">
-                {catStatus[c.slug]}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      <div className="border border-base-content/10 rounded-xl p-4 bg-base-200/30 mb-8">
-        <div className="font-mono text-sm mb-1">Trip notes (Oct 19–26)</div>
-        <p className="text-xs text-base-content/50 mb-3">
-          Adds the eight hand-written entries from the end of the trip, dated and
-          map-pinned, text only. Safe to run more than once. Add photos after in
-          the editor.
-        </p>
-        <button onClick={addNotes} disabled={notesRunning} className="btn btn-primary btn-sm">
-          {notesRunning ? (
-            <span className="loading loading-spinner loading-xs" />
-          ) : (
-            "Add the 8 notes posts"
-          )}
-        </button>
-        {notesResult && (
-          <div className="alert alert-success text-sm mt-3">
-            <span>{notesResult}</span>
-          </div>
-        )}
-      </div>
-
-      <div className="font-mono text-sm mb-3">Weebly blog posts</div>
-      <div className="flex gap-3 mb-6">
-        <button
-          onClick={loadList}
-          disabled={loading}
-          className="btn btn-outline btn-sm"
-        >
-          {loading ? <span className="loading loading-spinner loading-xs" /> : "Load posts"}
-        </button>
-        <button
-          onClick={importSelected}
-          disabled={importing || selected.size === 0 || posts.length === 0}
-          className="btn btn-primary btn-sm"
-        >
-          {importing ? (
-            <span className="loading loading-spinner loading-xs" />
-          ) : (
-            `Import ${selected.size} selected`
-          )}
-        </button>
-      </div>
+      )}
 
       {error && (
         <div className="alert alert-error text-sm mb-4">
@@ -345,13 +175,13 @@ export default function ImportPage() {
       )}
 
       {posts.length > 0 && (
-        <ul className="space-y-2">
+        <ul className="space-y-1 mb-8">
           {posts.map((p) => {
             const st = statuses[p.permalink]?.state ?? "idle";
             return (
               <li
                 key={p.permalink}
-                className="flex items-start gap-3 border border-base-content/10 rounded-lg p-3 bg-base-200/30"
+                className="flex items-start gap-3 border border-base-content/10 rounded-lg px-3 py-2 bg-base-200/30"
               >
                 <input
                   type="checkbox"
@@ -361,37 +191,44 @@ export default function ImportPage() {
                   className="checkbox checkbox-sm mt-0.5"
                 />
                 <div className="flex-1 min-w-0">
-                  <div className="font-mono text-sm text-base-content/90 truncate">
-                    {p.title}
-                  </div>
-                  <div className="text-xs font-mono text-base-content/40">
-                    {fmtDate(p.dateISO, p.dateText)} · {p.imageCount} photo
-                    {p.imageCount === 1 ? "" : "s"}
+                  <div className="text-sm text-base-content/90 truncate">{p.title}</div>
+                  <div className="text-xs font-mono text-base-content/40 flex flex-wrap items-center gap-x-2">
+                    <span>{fmtDate(p.dateISO)}</span>
+                    <span>· {p.imageCount} photo{p.imageCount === 1 ? "" : "s"}</span>
+                    {p.tags.map((t) => (
+                      <span key={t} className="badge badge-xs badge-outline">
+                        {t}
+                      </span>
+                    ))}
                   </div>
                 </div>
                 <div className="text-xs font-mono shrink-0 self-center">
-                  {st === "importing" && (
-                    <span className="loading loading-spinner loading-xs" />
-                  )}
-                  {st === "created" && (
-                    <span className="text-success">
-                      ✓ {statuses[p.permalink] && "message" in statuses[p.permalink]
-                        ? (statuses[p.permalink] as { message: string }).message
-                        : ""}
-                    </span>
-                  )}
+                  {st === "importing" && <span className="loading loading-spinner loading-xs" />}
+                  {st === "created" && <span className="text-success">✓ {statuses[p.permalink]?.msg}</span>}
                   {st === "skipped" && <span className="text-base-content/40">skipped</span>}
-                  {st === "error" && (
-                    <span className="text-error break-all">
-                      {(statuses[p.permalink] as { message: string }).message}
-                    </span>
-                  )}
+                  {st === "error" && <span className="text-error break-all">{statuses[p.permalink]?.msg}</span>}
                 </div>
               </li>
             );
           })}
         </ul>
       )}
+
+      <div className="border border-base-content/10 rounded-xl p-4 bg-base-200/30 mb-8">
+        <div className="font-mono text-sm mb-1">New Zealand trip notes (Oct 19–26)</div>
+        <p className="text-xs text-base-content/50 mb-3">
+          Adds the eight hand-written entries from the end of the NZ trip, dated
+          and map-pinned, text only. Safe to run more than once.
+        </p>
+        <button onClick={addNotes} disabled={notesRunning} className="btn btn-primary btn-sm">
+          {notesRunning ? <span className="loading loading-spinner loading-xs" /> : "Add the 8 notes posts"}
+        </button>
+        {notesResult && (
+          <div className="alert alert-success text-sm mt-3">
+            <span>{notesResult}</span>
+          </div>
+        )}
+      </div>
 
       <div className="mt-8">
         <Link href="/admin" className="text-sm font-mono text-base-content/40 hover:text-primary">

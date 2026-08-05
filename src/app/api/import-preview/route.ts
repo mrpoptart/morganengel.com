@@ -40,10 +40,8 @@ interface PlanPost {
   imageCount: number;
 }
 
-// Crawl the whole blog, cluster posts into trips by date gaps, and name each
-// cluster from the category its posts belong to.
-async function handlePlan() {
-  // 1. Crawl every post via the working main-feed pagination.
+// Crawl every post via the working main-feed pagination, oldest-first.
+async function crawlAllPosts(): Promise<PlanPost[]> {
   const master: PlanPost[] = [];
   const seen = new Set<string>();
   for (let page = 1; page <= 40; page++) {
@@ -66,6 +64,45 @@ async function handlePlan() {
     if (added === 0) break;
   }
   master.sort((a, b) => a.dateISO.localeCompare(b.dateISO));
+  return master;
+}
+
+// Build a slug -> categories map from the category pages (used as post tags).
+const ALL_CATEGORIES = [
+  ...TRIP_CATEGORIES,
+  "torch-lake",
+  "camping",
+  "cars",
+  "kids",
+];
+async function categoryTagMap(): Promise<Map<string, string[]>> {
+  const map = new Map<string, string[]>();
+  for (const cat of ALL_CATEGORIES) {
+    const html = await fetchWeebly(`${BLOG}/category/${cat}`);
+    if (!html) continue;
+    for (const p of parseWeeblyListing(html, BLOG)) {
+      const arr = map.get(p.slug) ?? [];
+      if (!arr.includes(cat)) arr.push(cat);
+      map.set(p.slug, arr);
+    }
+  }
+  return map;
+}
+
+// All posts, newest-first, each with the categories (tags) we could find.
+async function handleAllPosts() {
+  const [master, tags] = await Promise.all([crawlAllPosts(), categoryTagMap()]);
+  const posts = master
+    .slice()
+    .sort((a, b) => b.dateISO.localeCompare(a.dateISO))
+    .map((p) => ({ ...p, tags: tags.get(p.slug) ?? [] }));
+  return NextResponse.json({ count: posts.length, posts });
+}
+
+// Crawl the whole blog, cluster posts into trips by date gaps, and name each
+// cluster from the category its posts belong to.
+async function handlePlan() {
+  const master = await crawlAllPosts();
 
   // 2. Cluster by date gaps (a trip is a run of near-daily posts).
   const GAP_MS = 12 * 86400000;
@@ -291,6 +328,9 @@ async function handleCatList(slug: string) {
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
+  if (searchParams.get("allposts") === "1") {
+    return handleAllPosts();
+  }
   if (searchParams.get("plan") === "1") {
     return handlePlan();
   }
