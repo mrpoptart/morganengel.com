@@ -14,18 +14,10 @@ import {
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { withTimeout } from "./withTimeout";
+import { ensureSlug } from "./slug";
 import type { Trip } from "@/types/trip";
 
 const tripsRef = collection(db, "trips");
-
-function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .trim();
-}
 
 export async function getPublishedTrips(max?: number): Promise<Trip[]> {
   const q = max
@@ -82,7 +74,7 @@ export async function createTrip(data: {
 
   const payload: Record<string, unknown> = {
     title: data.title,
-    slug: slugify(data.title),
+    slug: ensureSlug(undefined, data.title),
     description: data.description,
     status: data.status,
     publishedAt,
@@ -112,7 +104,7 @@ export async function updateTrip(
   };
 
   if (data.title !== undefined) updates.title = data.title;
-  if (data.slug !== undefined) updates.slug = data.slug;
+  if (data.slug !== undefined) updates.slug = ensureSlug(data.slug, data.title ?? "");
   if (data.description !== undefined) updates.description = data.description;
   if (data.status !== undefined) updates.status = data.status;
   if (data.coverImage !== undefined) updates.coverImage = data.coverImage ?? null;

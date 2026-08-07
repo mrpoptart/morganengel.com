@@ -14,18 +14,10 @@ import {
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { withTimeout } from "./withTimeout";
+import { ensureSlug } from "./slug";
 import type { Post } from "@/types/post";
 
 const postsRef = collection(db, "posts");
-
-function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .trim();
-}
 
 function decodeHtmlEntities(str: string): string {
   return str
@@ -107,7 +99,7 @@ export async function createPost(data: {
       : null;
   const payload: Record<string, unknown> = {
     title: data.title,
-    slug: slugify(data.title),
+    slug: ensureSlug(undefined, data.title),
     content: data.content,
     excerpt: generateExcerpt(data.content),
     tags: data.tags,
@@ -136,6 +128,11 @@ export async function updatePost(
     ...data,
     updatedAt: Timestamp.now(),
   };
+
+  // Never persist an empty slug (would make the post unreachable).
+  if (data.slug !== undefined) {
+    updates.slug = ensureSlug(data.slug, data.title ?? "");
+  }
 
   if (data.content) {
     updates.excerpt = generateExcerpt(data.content);

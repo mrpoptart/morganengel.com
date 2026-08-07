@@ -33,6 +33,12 @@ export default function ImportPage() {
   const [dupList, setDupList] = useState<{ slug: string; title: string }[] | null>(null);
   const [dupResult, setDupResult] = useState<string | null>(null);
 
+  const [slugRunning, setSlugRunning] = useState(false);
+  const [slugList, setSlugList] = useState<
+    { collection: string; title: string; newSlug: string }[] | null
+  >(null);
+  const [slugResult, setSlugResult] = useState<string | null>(null);
+
   async function loadPosts() {
     setError(null);
     setLoading(true);
@@ -156,6 +162,38 @@ export default function ImportPage() {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setDupRunning(false);
+    }
+  }
+
+  async function backfillSlugs(confirm: boolean) {
+    if (!user) return;
+    setSlugRunning(true);
+    setSlugResult(null);
+    setError(null);
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch("/api/backfill-slugs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ confirm }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed");
+      if (confirm) {
+        setSlugList(null);
+        setSlugResult(`Fixed ${data.fixed} entr${data.fixed === 1 ? "y" : "ies"}.`);
+      } else {
+        setSlugList(data.fixes);
+        setSlugResult(
+          data.count === 0
+            ? "Every entry already has a slug — nothing to fix."
+            : `Found ${data.count} entr${data.count === 1 ? "y" : "ies"} with no slug.`
+        );
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSlugRunning(false);
     }
   }
 
@@ -323,6 +361,61 @@ export default function ImportPage() {
               >
                 <span className="truncate">{d.title}</span>
                 <span className="text-base-content/30">/posts/{d.slug}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <div className="border border-base-content/10 rounded-xl p-4 bg-base-200/30 mb-8">
+        <div className="font-mono text-sm mb-1">Fix missing slugs</div>
+        <p className="text-xs text-base-content/50 mb-3">
+          A post saved without a slug is unreachable — its link falls back to
+          the index instead of the post. This finds any post, journal entry, or
+          trip with no slug and assigns one derived from its title. Preview
+          first.
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => backfillSlugs(false)}
+            disabled={slugRunning}
+            className="btn btn-outline btn-sm"
+          >
+            {slugRunning && slugList === null ? (
+              <span className="loading loading-spinner loading-xs" />
+            ) : (
+              "Find missing slugs"
+            )}
+          </button>
+          {slugList && slugList.length > 0 && (
+            <button
+              onClick={() => backfillSlugs(true)}
+              disabled={slugRunning}
+              className="btn btn-primary btn-sm"
+            >
+              {slugRunning ? (
+                <span className="loading loading-spinner loading-xs" />
+              ) : (
+                `Fix ${slugList.length}`
+              )}
+            </button>
+          )}
+        </div>
+        {slugResult && (
+          <div className="alert alert-info text-sm mt-3">
+            <span>{slugResult}</span>
+          </div>
+        )}
+        {slugList && slugList.length > 0 && (
+          <ul className="mt-3 space-y-1">
+            {slugList.map((s) => (
+              <li
+                key={`${s.collection}-${s.newSlug}`}
+                className="text-xs font-mono text-base-content/60 flex items-center gap-2"
+              >
+                <span className="badge badge-xs badge-outline shrink-0">{s.collection}</span>
+                <span className="truncate">{s.title}</span>
+                <span className="text-base-content/30">→ {s.newSlug}</span>
               </li>
             ))}
           </ul>

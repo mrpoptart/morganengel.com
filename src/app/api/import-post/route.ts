@@ -156,7 +156,7 @@ export async function POST(request: Request) {
     dateISO = parsed.dateISO;
   }
 
-  const slug = slugify(title);
+  const slug = slugify(title) || `imported-${Date.now().toString(36)}`;
 
   // --- Dedupe: skip if an entry with this slug already exists ---
   const existing = await adminDb

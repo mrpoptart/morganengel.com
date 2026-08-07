@@ -14,18 +14,10 @@ import {
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { withTimeout } from "./withTimeout";
+import { ensureSlug } from "./slug";
 import type { JournalEntry, GeoLocation } from "@/types/journal";
 
 const journalRef = collection(db, "journal");
-
-function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .trim();
-}
 
 function decodeHtmlEntities(str: string): string {
   return str
@@ -122,7 +114,7 @@ export async function createJournal(data: {
   // Firestore rejects `undefined`; only include optional fields when set.
   const payload: Record<string, unknown> = {
     title: data.title,
-    slug: slugify(data.title),
+    slug: ensureSlug(undefined, data.title),
     content: data.content,
     excerpt: generateExcerpt(data.content),
     location: cleanLocation(data.location),
@@ -161,7 +153,9 @@ export async function updateJournal(
   };
 
   if (data.title !== undefined) updates.title = data.title;
-  if (data.slug !== undefined) updates.slug = data.slug;
+  // Never persist an empty slug: fall back to the title (or a generated token)
+  // so renaming or re-saving a doc can't leave it unreachable.
+  if (data.slug !== undefined) updates.slug = ensureSlug(data.slug, data.title ?? "");
   if (data.tags !== undefined) updates.tags = data.tags;
   if (data.status !== undefined) updates.status = data.status;
   if (data.location !== undefined) updates.location = cleanLocation(data.location);
