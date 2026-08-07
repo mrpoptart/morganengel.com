@@ -6,6 +6,7 @@ import {
   parseArchivedPost,
   parseWeeblyListing,
   nzLocationForTitle,
+  flattenWeeblyGalleries,
 } from "@/lib/import-parse";
 import { Timestamp } from "firebase-admin/firestore";
 
@@ -194,7 +195,7 @@ export async function POST(request: Request) {
       img.remove();
     }
   }
-  const contentHtml = root.toString();
+  const contentHtml = flattenWeeblyGalleries(root.toString());
 
   const now = Timestamp.now();
   const publishedAt = dateISO ? Timestamp.fromDate(new Date(dateISO)) : now;

@@ -5,6 +5,8 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
+      // Server modules import Next's `server-only`; stub it under Node.
+      "server-only": fileURLToPath(new URL("./tests/stubs/server-only.js", import.meta.url)),
     },
   },
   test: {

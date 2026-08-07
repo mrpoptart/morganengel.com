@@ -39,6 +39,10 @@ export default function ImportPage() {
   >(null);
   const [slugResult, setSlugResult] = useState<string | null>(null);
 
+  const [galRunning, setGalRunning] = useState(false);
+  const [galList, setGalList] = useState<{ collection: string; title: string }[] | null>(null);
+  const [galResult, setGalResult] = useState<string | null>(null);
+
   async function loadPosts() {
     setError(null);
     setLoading(true);
@@ -194,6 +198,38 @@ export default function ImportPage() {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setSlugRunning(false);
+    }
+  }
+
+  async function fixGalleries(confirm: boolean) {
+    if (!user) return;
+    setGalRunning(true);
+    setGalResult(null);
+    setError(null);
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch("/api/fix-galleries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ confirm }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed");
+      if (confirm) {
+        setGalList(null);
+        setGalResult(`Cleaned up ${data.fixed} post${data.fixed === 1 ? "" : "s"}.`);
+      } else {
+        setGalList(data.fixes);
+        setGalResult(
+          data.count === 0
+            ? "No posts have leftover gallery markup — nothing to fix."
+            : `Found ${data.count} post${data.count === 1 ? "" : "s"} with leftover Weebly gallery markup.`
+        );
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setGalRunning(false);
     }
   }
 
@@ -416,6 +452,60 @@ export default function ImportPage() {
                 <span className="badge badge-xs badge-outline shrink-0">{s.collection}</span>
                 <span className="truncate">{s.title}</span>
                 <span className="text-base-content/30">→ {s.newSlug}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <div className="border border-base-content/10 rounded-xl p-4 bg-base-200/30 mb-8">
+        <div className="font-mono text-sm mb-1">Fix imported galleries</div>
+        <p className="text-xs text-base-content/50 mb-3">
+          Some imported posts kept the old Weebly gallery markup, which renders
+          photos as a cramped, cropped grid. This flattens those into plain
+          images (with a full-res link), matching the rest of your posts.
+          Preview first.
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => fixGalleries(false)}
+            disabled={galRunning}
+            className="btn btn-outline btn-sm"
+          >
+            {galRunning && galList === null ? (
+              <span className="loading loading-spinner loading-xs" />
+            ) : (
+              "Find gallery posts"
+            )}
+          </button>
+          {galList && galList.length > 0 && (
+            <button
+              onClick={() => fixGalleries(true)}
+              disabled={galRunning}
+              className="btn btn-primary btn-sm"
+            >
+              {galRunning ? (
+                <span className="loading loading-spinner loading-xs" />
+              ) : (
+                `Clean up ${galList.length}`
+              )}
+            </button>
+          )}
+        </div>
+        {galResult && (
+          <div className="alert alert-info text-sm mt-3">
+            <span>{galResult}</span>
+          </div>
+        )}
+        {galList && galList.length > 0 && (
+          <ul className="mt-3 space-y-1">
+            {galList.map((g) => (
+              <li
+                key={`${g.collection}-${g.title}`}
+                className="text-xs font-mono text-base-content/60 flex items-center gap-2"
+              >
+                <span className="badge badge-xs badge-outline shrink-0">{g.collection}</span>
+                <span className="truncate">{g.title}</span>
               </li>
             ))}
           </ul>

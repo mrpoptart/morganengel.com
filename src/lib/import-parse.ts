@@ -118,10 +118,49 @@ function slugFromPermalink(permalink: string): string {
 // imported content adopts the site's own typography.
 function cleanContentHtml(html: string): string {
   return html
-    .replace(/\sstyle="[^"]*"/gi, "")
+    // Weebly uses both single- and double-quoted inline styles; strip both.
+    .replace(/\sstyle=(["'])[\s\S]*?\1/gi, "")
     .replace(/​|&#8203;|&#x200b;/gi, "")
     .replace(/\sclass="paragraph"/gi, "")
     .trim();
+}
+
+/**
+ * Weebly wraps gallery photos in a nest of positioning <div>s
+ * (imageGallery / galleryImageBorder / galleryImageHolder …) plus a
+ * lightbox <a> whose onclick disables the link on our site. That scaffolding
+ * renders as a cramped, fixed-aspect float grid. Collapse each gallery to a
+ * plain container of its images (keeping a clean full-res link) so imported
+ * photos render like every other image in the post. Safe to run repeatedly.
+ */
+export function flattenWeeblyGalleries(html: string): string {
+  if (!/imageGallery|lightbox/i.test(html)) return html;
+  const root = parse(html, { comment: false });
+
+  // Neutralize the dead lightbox anchors: keep href (a plain full-res link),
+  // drop the rel/onclick that break it.
+  for (const a of root.querySelectorAll("a")) {
+    const rel = a.getAttribute("rel") || "";
+    const onclick = a.getAttribute("onclick") || "";
+    if (rel.includes("lightbox") || onclick.includes("lightboxLoaded")) {
+      a.removeAttribute("onclick");
+      a.removeAttribute("rel");
+    }
+  }
+
+  for (const g of root.querySelectorAll(".imageGallery")) {
+    const parts: string[] = [];
+    for (const img of g.querySelectorAll("img")) {
+      const p = img.parentNode;
+      const isAnchor = !!p && p.rawTagName?.toLowerCase() === "a";
+      parts.push((isAnchor ? p : img).toString());
+    }
+    g.removeAttribute("class");
+    g.removeAttribute("style");
+    g.removeAttribute("id");
+    g.set_content(parts.join(""));
+  }
+  return root.toString();
 }
 
 /**
