@@ -11,17 +11,27 @@ describe("flattenWeeblyGalleries", () => {
     expect(out).not.toContain("float:left");
   });
 
-  it("keeps the images and their full-res links, minus the dead lightbox onclick", () => {
+  it("reduces gallery photos to bare images with no anchor wrapper", () => {
     const out = flattenWeeblyGalleries(GALLERY);
     expect(out).toContain('src="https://cdn/1.jpg"');
     expect(out).toContain('src="https://cdn/2.jpg"');
-    expect(out).toContain('href="https://ex.com/a_orig.jpg"');
+    expect(out).not.toContain("<a");
+    expect(out).not.toContain("href=");
     expect(out).not.toContain("lightboxLoaded");
-    expect(out).not.toContain("rel=");
   });
 
   it("preserves surrounding prose", () => {
     expect(flattenWeeblyGalleries(GALLERY)).toContain("Intro text.");
+  });
+
+  it("unwraps a bare full-res image link left by an earlier pass", () => {
+    const priorPass =
+      '<p>Hi</p><a href="https://x.weebly.com/uploads/1/2/a_orig.jpg"><img src="https://cdn/1.jpg" class="rounded-lg max-w-full"></a>';
+    const out = flattenWeeblyGalleries(priorPass);
+    expect(out).not.toContain("<a");
+    expect(out).not.toContain("href=");
+    expect(out).toContain('src="https://cdn/1.jpg"');
+    expect(out).toContain("<p>Hi</p>");
   });
 
   it("is a no-op for content without galleries, and idempotent", () => {

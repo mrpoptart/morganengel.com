@@ -129,36 +129,34 @@ function cleanContentHtml(html: string): string {
  * Weebly wraps gallery photos in a nest of positioning <div>s
  * (imageGallery / galleryImageBorder / galleryImageHolder …) plus a
  * lightbox <a> whose onclick disables the link on our site. That scaffolding
- * renders as a cramped, fixed-aspect float grid. Collapse each gallery to a
- * plain container of its images (keeping a clean full-res link) so imported
- * photos render like every other image in the post. Safe to run repeatedly.
+ * renders as a cramped, fixed-aspect float grid. Reduce each gallery — and any
+ * lightbox-wrapped image — to bare <img> tags, so imported photos look exactly
+ * like an image pasted into the editor. Safe to run repeatedly.
  */
 export function flattenWeeblyGalleries(html: string): string {
-  if (!/imageGallery|lightbox/i.test(html)) return html;
+  if (!/imageGallery|lightbox|_orig\.(?:jpe?g|png|gif|webp)/i.test(html)) return html;
   const root = parse(html, { comment: false });
 
-  // Neutralize the dead lightbox anchors: keep href (a plain full-res link),
-  // drop the rel/onclick that break it.
+  // Unwrap Weebly image links, keeping just the <img> inside: the dead lightbox
+  // anchors (rel/onclick), and bare full-res links to the original photo
+  // (…_orig.jpg) — including ones an earlier pass already stripped down.
   for (const a of root.querySelectorAll("a")) {
+    if (a.querySelectorAll("img").length === 0) continue;
     const rel = a.getAttribute("rel") || "";
     const onclick = a.getAttribute("onclick") || "";
-    if (rel.includes("lightbox") || onclick.includes("lightboxLoaded")) {
-      a.removeAttribute("onclick");
-      a.removeAttribute("rel");
+    const href = a.getAttribute("href") || "";
+    const isLightbox = rel.includes("lightbox") || onclick.includes("lightboxLoaded");
+    const isOrigLink = /_orig\.(?:jpe?g|png|gif|webp)/i.test(href);
+    if (isLightbox || isOrigLink) {
+      const imgs = a.querySelectorAll("img").map((i) => i.toString()).join("");
+      a.replaceWith(imgs || a.innerHTML);
     }
   }
 
+  // Replace each gallery's div-soup with its bare images.
   for (const g of root.querySelectorAll(".imageGallery")) {
-    const parts: string[] = [];
-    for (const img of g.querySelectorAll("img")) {
-      const p = img.parentNode;
-      const isAnchor = !!p && p.rawTagName?.toLowerCase() === "a";
-      parts.push((isAnchor ? p : img).toString());
-    }
-    g.removeAttribute("class");
-    g.removeAttribute("style");
-    g.removeAttribute("id");
-    g.set_content(parts.join(""));
+    const imgs = g.querySelectorAll("img").map((i) => i.toString()).join("");
+    g.replaceWith(imgs);
   }
   return root.toString();
 }
