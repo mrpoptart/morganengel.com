@@ -513,13 +513,14 @@ export default function ImportPage() {
       </div>
 
       <div className="border border-base-content/10 rounded-xl p-4 bg-base-200/30 mb-8">
-        <div className="font-mono text-sm mb-1">Ireland 2011 photo reconstruction</div>
+        <div className="font-mono text-sm mb-1">Import posts from a file</div>
         <p className="text-xs text-base-content/50 mb-3">
-          Turn the day-by-day <code>ireland2011</code> HTML file into draft
-          journal entries, one per day, with the photos re-hosted.
+          Turn a self-contained import HTML file (photos baked in) into draft
+          journal entries, one per <code>&lt;article&gt;</code>, with the images
+          re-hosted. Build one with <code>scripts/build-import-html.mjs</code>.
         </p>
         <Link href="/admin/import-itinerary" className="btn btn-outline btn-sm">
-          Open the reconstruction importer
+          Open the file importer
         </Link>
       </div>
 
