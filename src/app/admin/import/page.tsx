@@ -512,6 +512,17 @@ export default function ImportPage() {
         )}
       </div>
 
+      <div className="border border-base-content/10 rounded-xl p-4 bg-base-200/30 mb-8">
+        <div className="font-mono text-sm mb-1">Ireland 2011 photo reconstruction</div>
+        <p className="text-xs text-base-content/50 mb-3">
+          Turn the day-by-day <code>ireland2011</code> HTML file into draft
+          journal entries, one per day, with the photos re-hosted.
+        </p>
+        <Link href="/admin/import-itinerary" className="btn btn-outline btn-sm">
+          Open the reconstruction importer
+        </Link>
+      </div>
+
       <div className="mt-8">
         <Link href="/admin" className="text-sm font-mono text-base-content/40 hover:text-primary">
           ← Back to dashboard
