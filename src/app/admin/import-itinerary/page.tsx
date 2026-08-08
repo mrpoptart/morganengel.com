@@ -12,13 +12,6 @@ interface Figure {
   caption: string;
 }
 
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-}
-
 // Pull each "Day N" section's photos (data URIs + captions) out of the source
 // HTML the user assembled, keyed by day number.
 function parseDays(html: string): Map<number, Figure[]> {
@@ -66,18 +59,33 @@ export default function ImportItineraryPage() {
     }
   }
 
+  // Interleave the day's photos into the authored body at each {{img}} marker,
+  // in the order given by imageOrder (so out-of-sequence "extra" shots land at
+  // the right beat). Images are bare, matching the Japan posts — the prose
+  // carries the story, not captions.
   function buildContent(day: number): string {
     const post = IRELAND_ITINERARY.find((p) => p.day === day)!;
     const figs = days?.get(day) ?? [];
-    const paras = post.lead.map((p) => `<p>${escapeHtml(p)}</p>`).join("");
-    const photos = figs
-      .map(
-        (f) =>
-          `<img src="${f.src}" class="rounded-lg max-w-full">` +
-          (f.caption ? `<p><em>${escapeHtml(f.caption)}</em></p>` : "")
-      )
-      .join("");
-    return paras + photos;
+    const order = post.imageOrder ?? figs.map((_, i) => i + 1);
+    const imgs = order
+      .map((i) => figs[i - 1])
+      .filter(Boolean)
+      .map((f) => `<img src="${f.src}" class="rounded-lg max-w-full">`);
+    const parts = post.body.split("{{img}}");
+    let html = parts[0];
+    for (let i = 1; i < parts.length; i++) {
+      html += (imgs[i - 1] ?? "") + parts[i];
+    }
+    // Any photos beyond the marker count get appended so nothing is dropped.
+    if (imgs.length > parts.length - 1) {
+      html += imgs.slice(parts.length - 1).join("");
+    }
+    return html;
+  }
+
+  function markerCount(day: number): number {
+    const post = IRELAND_ITINERARY.find((p) => p.day === day)!;
+    return post.body.split("{{img}}").length - 1;
   }
 
   async function importAll() {
@@ -126,10 +134,13 @@ export default function ImportItineraryPage() {
       <h1 className="text-3xl font-mono font-bold mb-2">Import Ireland reconstruction</h1>
       <p className="text-sm text-base-content/50 mb-6">
         Pick the <code>ireland2011</code> HTML file you assembled. Each day
-        becomes a <b>draft</b> journal entry in the Ireland 2011 trip, dated and
-        map-pinned, with that day&apos;s photos re-hosted. Review the voice and
-        publish when you&apos;re happy. Already-imported days are skipped, so
-        it&apos;s safe to re-run.
+        becomes a <b>draft</b> journal entry in the Ireland 2011 trip &mdash; a
+        full narrative post written to match the Japan voice, dated and
+        map-pinned, with that day&apos;s photos dropped inline at each slot and
+        re-hosted. Review and touch up the wording, then publish. Every row
+        should read <code>N photos / N slots</code>; a ⚠ means the file has a
+        different photo count than the post expects. Already-imported days are
+        skipped, so it&apos;s safe to re-run.
       </p>
 
       <div className="flex flex-wrap items-center gap-3 mb-4">
@@ -167,6 +178,8 @@ export default function ImportItineraryPage() {
           {IRELAND_ITINERARY.map((post) => {
             const st = statuses[post.day]?.state ?? "idle";
             const photoCount = days.get(post.day)?.length ?? 0;
+            const markers = markerCount(post.day);
+            const mismatch = photoCount !== markers;
             return (
               <li
                 key={post.day}
@@ -176,7 +189,10 @@ export default function ImportItineraryPage() {
                   <div className="text-sm text-base-content/90 truncate">{post.title}</div>
                   <div className="text-xs font-mono text-base-content/40 flex flex-wrap items-center gap-x-2">
                     <span>{new Date(post.dateISO).toLocaleDateString()}</span>
-                    <span>· {photoCount} photos</span>
+                    <span className={mismatch ? "text-warning" : ""}>
+                      · {photoCount} photos / {markers} slots
+                      {mismatch ? " ⚠" : ""}
+                    </span>
                     {post.location && <span>· {post.location.label}</span>}
                   </div>
                 </div>
