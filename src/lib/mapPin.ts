@@ -13,7 +13,31 @@ export function pinIcon(leaflet: typeof L): L.DivIcon {
   });
 }
 
+// Esri's "Dark Gray Canvas" basemap: a dark raster style that, unlike CARTO's
+// old basemaps.cartocdn.com tiles, needs no API key. It comes in two layers —
+// a base and a separate labels/reference overlay — so we add both.
 export const TILE_URL =
-  "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+  "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}";
+export const TILE_LABELS_URL =
+  "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}";
 export const TILE_ATTRIBUTION =
-  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
+  'Tiles &copy; <a href="https://www.esri.com/">Esri</a> &mdash; Esri, HERE, Garmin, &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+
+/**
+ * Add the dark basemap (tiles + place labels) to a Leaflet map. Esri serves
+ * these up to zoom 16; maxNativeZoom lets Leaflet upscale beyond that instead
+ * of showing blank tiles. Labels are added after the base so they sit on top of
+ * it, but both are in the tile pane, below the marker pane, so pins stay above.
+ */
+export function addBasemap(leaflet: typeof L, map: L.Map): void {
+  leaflet
+    .tileLayer(TILE_URL, {
+      attribution: TILE_ATTRIBUTION,
+      maxNativeZoom: 16,
+      maxZoom: 19,
+    })
+    .addTo(map);
+  leaflet
+    .tileLayer(TILE_LABELS_URL, { maxNativeZoom: 16, maxZoom: 19 })
+    .addTo(map);
+}

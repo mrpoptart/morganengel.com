@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import "leaflet/dist/leaflet.css";
-import { pinIcon, TILE_URL, TILE_ATTRIBUTION } from "@/lib/mapPin";
+import { pinIcon, addBasemap } from "@/lib/mapPin";
 import type { Map as LeafletMap } from "leaflet";
 
 export interface JournalPoint {
@@ -42,10 +42,7 @@ export function JournalMapOverview({
         zoom: 2,
         scrollWheelZoom: false,
       });
-      L.tileLayer(TILE_URL, {
-        attribution: TILE_ATTRIBUTION,
-        maxZoom: 19,
-      }).addTo(map);
+      addBasemap(L, map);
 
       const latlngs: [number, number][] = [];
       for (const p of points) {

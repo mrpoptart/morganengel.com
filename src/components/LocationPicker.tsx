@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import "leaflet/dist/leaflet.css";
-import { pinIcon, TILE_URL, TILE_ATTRIBUTION } from "@/lib/mapPin";
+import { pinIcon, addBasemap } from "@/lib/mapPin";
 import { searchPlaces, reverseGeocode, type GeocodeResult } from "@/lib/geocode";
 import type { GeoLocation } from "@/types/journal";
 import type { Map as LeafletMap, Marker as LeafletMarker } from "leaflet";
@@ -84,10 +84,7 @@ export function LocationPicker({ value, onChange }: LocationPickerProps) {
         zoom: start ? 12 : 2,
         scrollWheelZoom: true,
       });
-      L.tileLayer(TILE_URL, {
-        attribution: TILE_ATTRIBUTION,
-        maxZoom: 19,
-      }).addTo(map);
+      addBasemap(L, map);
       map.on("click", (e) => {
         void setFromCoords(e.latlng.lat, e.latlng.lng);
       });

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import "leaflet/dist/leaflet.css";
-import { pinIcon, TILE_URL, TILE_ATTRIBUTION } from "@/lib/mapPin";
+import { pinIcon, addBasemap } from "@/lib/mapPin";
 import type { Map as LeafletMap } from "leaflet";
 
 interface LocationMapProps {
@@ -49,10 +49,7 @@ export function LocationMap({
         attributionControl: true,
       });
 
-      L.tileLayer(TILE_URL, {
-        attribution: TILE_ATTRIBUTION,
-        maxZoom: 19,
-      }).addTo(map);
+      addBasemap(L, map);
 
       L.marker([lat, lng], { icon: pinIcon(L), keyboard: false }).addTo(map);
 
