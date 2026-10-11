@@ -19,6 +19,7 @@ import Youtube from "@tiptap/extension-youtube";
 import { uploadImage } from "@/lib/upload";
 import { CodeBlockWithLanguage } from "./CodeBlockWithLanguage";
 import { Caption } from "./Caption";
+import { Attribution } from "./Attribution";
 import { highlightHtml } from "@/lib/highlightHtml";
 
 interface EditorProps {
@@ -48,6 +49,7 @@ const extensions = [
   StarterKit.configure({ codeBlock: false }),
   CodeBlockWithLanguage,
   Caption,
+  Attribution,
   Link.configure({
     openOnClick: false,
     HTMLAttributes: { class: "link link-primary" },
@@ -177,6 +179,13 @@ function Toolbar({ portalTarget }: { portalTarget: HTMLElement | null }) {
         label="&ldquo;"
         isActive={editor.isActive("blockquote")}
         onClick={() => editor.chain().focus().toggleBlockquote().run()}
+      />
+      <ToolbarButton
+        label="&mdash;"
+        isActive={editor.isActive("attribution")}
+        onClick={() =>
+          editor.chain().focus().toggleNode("attribution", "paragraph").run()
+        }
       />
       <ToolbarButton
         label="{ }"
