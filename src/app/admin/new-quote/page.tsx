@@ -49,9 +49,10 @@ export default function NewQuotePage() {
       />
 
       <div className="flex items-center gap-2 mb-4">
-        <label className="text-xs text-base-content/40 font-mono">Author:</label>
+        <label className="text-xs text-base-content/40 font-mono whitespace-nowrap">Said by:</label>
         <input
           type="text"
+          placeholder={DEFAULT_QUOTE_AUTHOR}
           value={author}
           onChange={(e) => setAuthor(e.target.value)}
           className="input input-ghost input-sm font-mono text-sm w-full focus:outline-none"

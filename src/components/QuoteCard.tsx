@@ -7,7 +7,6 @@ interface QuoteCardProps {
 }
 
 export function QuoteCard({ body, author, date, index = 0, total = 1 }: QuoteCardProps) {
-  const meta = [author, date].filter(Boolean).join(" · ");
   return (
     <figure
       className="card bg-base-200/50 border border-base-content/5 animate-fade-in-up md:col-span-2"
@@ -25,9 +24,18 @@ export function QuoteCard({ body, author, date, index = 0, total = 1 }: QuoteCar
             <blockquote className="text-xl font-serif italic text-base-content leading-snug whitespace-pre-wrap">
               {body}
             </blockquote>
-            {meta && (
-              <figcaption className="mt-2 text-sm font-mono text-base-content/50">
-                {meta}
+            {(author || date) && (
+              <figcaption className="mt-2">
+                {author && (
+                  <span className="block text-base font-medium text-base-content/80">
+                    &mdash; {author}
+                  </span>
+                )}
+                {date && (
+                  <span className="block mt-1 text-sm font-mono text-base-content/50">
+                    {date}
+                  </span>
+                )}
               </figcaption>
             )}
           </div>
