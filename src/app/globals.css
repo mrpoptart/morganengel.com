@@ -88,6 +88,19 @@
   padding: 1rem 1.5rem;
 }
 
+/* Attribution — the "— Name" line under a quote. */
+.prose-blog :where(footer.attribution) {
+  margin-top: 0.75rem;
+  font-style: normal;
+  font-weight: 500;
+  font-size: 0.95em;
+  color: oklch(from #f8f8f2 l c h / 0.8);
+}
+
+.prose-blog :where(footer.attribution)::before {
+  content: "\2014\00a0";
+}
+
 /* Caption — image captions / asides. Quote-like, but lighter and unboxed. */
 .prose-blog :where(p.caption) {
   margin-top: 0.5rem;
