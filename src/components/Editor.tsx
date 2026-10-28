@@ -305,6 +305,14 @@ export function Editor({ initialContent, initialHTML, onUpdate }: EditorProps) {
             onUpdate?.(json, highlightHtml(editor.getHTML()));
           }}
           editorProps={{
+            // Tell mobile keyboards this is prose, so they turn on
+            // autocorrect, sentence caps and auto-spacing after punctuation.
+            attributes: {
+              autocorrect: "on",
+              autocapitalize: "sentences",
+              spellcheck: "true",
+              inputmode: "text",
+            },
             handlePaste(view, event) {
               const items = event.clipboardData?.items;
               if (!items) return false;
