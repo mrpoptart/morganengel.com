@@ -20,7 +20,6 @@ import { uploadImage } from "@/lib/upload";
 import { CodeBlockWithLanguage } from "./CodeBlockWithLanguage";
 import { Caption } from "./Caption";
 import { Attribution } from "./Attribution";
-import { AutoSpace } from "./AutoSpace";
 import { highlightHtml } from "@/lib/highlightHtml";
 
 interface EditorProps {
@@ -46,12 +45,11 @@ function handleImageFiles(
   return false;
 }
 
-const extensions = [
+export const extensions = [
   StarterKit.configure({ codeBlock: false }),
   CodeBlockWithLanguage,
   Caption,
   Attribution,
-  AutoSpace,
   Link.configure({
     openOnClick: false,
     HTMLAttributes: { class: "link link-primary" },
