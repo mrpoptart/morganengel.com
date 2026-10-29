@@ -1,0 +1,37 @@
+--- a/node_modules/prosemirror-view/dist/index.js
++++ b/node_modules/prosemirror-view/dist/index.js
+@@ -1887,6 +1887,16 @@
+     // Try to update the next node, if any, to the given data. Checks
+     // pre-matches to avoid overwriting nodes that could still be used.
+     updateNextNode(node, outerDeco, innerDeco, view, index, pos) {
++        // When a composition has finished, adopt the text node the IME typed
++        // into instead of redrawing it. Replacing it (and resetting the
++        // selection) makes Android keyboards like Gboard reset their state,
++        // dropping the auto-space after punctuation.
++        let comp = this.index < this.top.children.length ? this.top.children[this.index] : null;
++        if (comp instanceof CompositionViewDesc && node.isText && !outerDeco.length && !view.composing &&
++            comp.dom == comp.textDOM && comp.textDOM.nodeValue == node.text) {
++            this.top.children[this.index++] = new TextViewDesc(this.top, node, outerDeco, innerDeco, comp.textDOM, comp.textDOM, view);
++            return true;
++        }
+         for (let i = this.index; i < this.top.children.length; i++) {
+             let next = this.top.children[i];
+             if (next instanceof NodeViewDesc) {
+--- a/node_modules/prosemirror-view/dist/index.cjs
++++ b/node_modules/prosemirror-view/dist/index.cjs
+@@ -1876,6 +1876,15 @@
+   }, {
+     key: "updateNextNode",
+     value: function updateNextNode(node, outerDeco, innerDeco, view, index, pos) {
++      // When a composition has finished, adopt the text node the IME typed
++      // into instead of redrawing it. Replacing it (and resetting the
++      // selection) makes Android keyboards like Gboard reset their state,
++      // dropping the auto-space after punctuation.
++      var comp = this.index < this.top.children.length ? this.top.children[this.index] : null;
++      if (comp instanceof CompositionViewDesc && node.isText && !outerDeco.length && !view.composing && comp.dom == comp.textDOM && comp.textDOM.nodeValue == node.text) {
++        this.top.children[this.index++] = new TextViewDesc(this.top, node, outerDeco, innerDeco, comp.textDOM, comp.textDOM, view);
++        return true;
++      }
+       for (var i = this.index; i < this.top.children.length; i++) {
+         var next = this.top.children[i];
+         if (next instanceof NodeViewDesc) {
