@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { EditorRoot, EditorContent } from "novel";
-import StarterKit from "@tiptap/starter-kit";
 import { EditorState, Selection } from "@tiptap/pm/state";
 import { EditorView } from "@tiptap/pm/view";
 import { schema } from "@tiptap/pm/schema-basic";
@@ -11,7 +9,6 @@ import { schema } from "@tiptap/pm/schema-basic";
 // sequence can be compared between a plain box and the editor library.
 
 const box = "border rounded p-3 min-h-20 w-full bg-base-200";
-const bareExtensions = [StarterKit];
 
 type Log = string[];
 let selPatched = false;
@@ -99,6 +96,11 @@ function Recorded({ title, children, find }: { title: string; children: React.Re
   );
 }
 
+const emptyParagraph = { __html: "<p><br></p>" };
+
+// The styles TipTap injects for every editor, so the copies match it exactly.
+const editorCss = `.ProseMirror { position: relative; word-wrap: break-word; white-space: pre-wrap; white-space: break-spaces; -webkit-font-variant-ligatures: none; font-variant-ligatures: none; font-feature-settings: "liga" 0; }`;
+
 // ProseMirror on its own, outside React, so nothing re-renders it.
 function RawProseMirror({
   attributes = {},
@@ -142,35 +144,22 @@ function RawProseMirror({
 export function EditorTest() {
   return (
     <div className="max-w-2xl mx-auto p-4 space-y-8">
-      <p className="text-sm">Type &quot;hello.how&quot; in C, Q, S and QS (in S and QS, tap at the end of &quot;Hi&quot; first). Note which add the space, and copy the logs for any that do.</p>
+      <style>{editorCss}</style>
+      <p className="text-sm">Type &quot;hello.how&quot; in each box and note which ones add the space. No need to copy logs unless something surprises you.</p>
       <Recorded title="P. Plain editable box" find={(w) => w.querySelector("[contenteditable]")}>
         <div contentEditable suppressContentEditableWarning className={box} style={{ whiteSpace: "break-spaces" }} />
       </Recorded>
-      <Recorded title="E. Editor library" find={(w) => w.querySelector(".ProseMirror")}>
-        <EditorRoot>
-          <EditorContent extensions={bareExtensions} editorProps={{ attributes: { class: box } }} />
-        </EditorRoot>
+      <Recorded title="P2. Plain box with a paragraph inside" find={(w) => w.querySelector("[contenteditable]")}>
+        <div contentEditable suppressContentEditableWarning className={box} style={{ whiteSpace: "break-spaces" }} dangerouslySetInnerHTML={emptyParagraph} />
       </Recorded>
-      <Recorded title="R. Editor library without React" find={(w) => w.querySelector(".ProseMirror")}>
+      <Recorded title="P3. Plain box with the editor's styles" find={(w) => w.querySelector("[contenteditable]")}>
+        <div contentEditable suppressContentEditableWarning className={`ProseMirror ${box}`} />
+      </Recorded>
+      <Recorded title="P5. Exact copy of the editor's box, no code" find={(w) => w.querySelector("[contenteditable]")}>
+        <div contentEditable suppressContentEditableWarning translate="no" className={`ProseMirror ${box}`} dangerouslySetInnerHTML={emptyParagraph} />
+      </Recorded>
+      <Recorded title="E. Editor library" find={(w) => w.querySelector(".ProseMirror[translate]")}>
         <RawProseMirror />
-      </Recorded>
-      <Recorded title="C. Plain box, class rewritten on every keystroke" find={(w) => w.querySelector("[contenteditable]")}>
-        <div
-          contentEditable
-          suppressContentEditableWarning
-          className={box}
-          style={{ whiteSpace: "break-spaces" }}
-          onInput={(e) => e.currentTarget.classList.remove("not-there")}
-        />
-      </Recorded>
-      <Recorded title="Q. Editor library, no class rewrites" find={(w) => w.querySelector(".ProseMirror")}>
-        <RawProseMirror quietClass />
-      </Recorded>
-      <Recorded title="S. Editor library, starting with text" find={(w) => w.querySelector(".ProseMirror")}>
-        <RawProseMirror startText="Hi " />
-      </Recorded>
-      <Recorded title="QS. Both" find={(w) => w.querySelector(".ProseMirror")}>
-        <RawProseMirror quietClass startText="Hi " />
       </Recorded>
     </div>
   );
