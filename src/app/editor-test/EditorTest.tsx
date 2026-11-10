@@ -99,23 +99,25 @@ function Recorded({ title, children, find }: { title: string; children: React.Re
   );
 }
 
+const translateYes = { translate: "yes" };
+
 // ProseMirror on its own, outside React, so nothing re-renders it.
-function RawProseMirror() {
+function RawProseMirror({ attributes = {} }: { attributes?: Record<string, string> }) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const view = new EditorView(ref.current, {
       state: EditorState.create({ schema }),
-      attributes: { class: box },
+      attributes: { class: box, ...attributes },
     });
     return () => view.destroy();
-  }, []);
+  }, [attributes]);
   return <div ref={ref} />;
 }
 
 export function EditorTest() {
   return (
     <div className="max-w-2xl mx-auto p-4 space-y-8">
-      <p className="text-sm">In each box, type &quot;hello.how&quot; once and note whether the space appears. Then tap Copy log under P and E and paste both in the chat.</p>
+      <p className="text-sm">In each box, type &quot;hello.how&quot; once and note whether the space appears. Then tap Copy log under P and paste it in the chat.</p>
       <Recorded title="P. Plain editable box" find={(w) => w.querySelector("[contenteditable]")}>
         <div contentEditable suppressContentEditableWarning className={box} style={{ whiteSpace: "break-spaces" }} />
       </Recorded>
@@ -126,6 +128,12 @@ export function EditorTest() {
       </Recorded>
       <Recorded title="R. Editor library without React" find={(w) => w.querySelector(".ProseMirror")}>
         <RawProseMirror />
+      </Recorded>
+      <Recorded title="T. Plain box with translate=no" find={(w) => w.querySelector("[contenteditable]")}>
+        <div contentEditable suppressContentEditableWarning translate="no" className={box} style={{ whiteSpace: "break-spaces" }} />
+      </Recorded>
+      <Recorded title="Y. Editor library with translate=yes" find={(w) => w.querySelector(".ProseMirror")}>
+        <RawProseMirror attributes={translateYes} />
       </Recorded>
     </div>
   );
