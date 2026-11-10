@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { EditorRoot, EditorContent } from "novel";
 import StarterKit from "@tiptap/starter-kit";
-import { EditorState } from "@tiptap/pm/state";
+import { EditorState, Selection } from "@tiptap/pm/state";
 import { EditorView } from "@tiptap/pm/view";
 import { schema } from "@tiptap/pm/schema-basic";
 
@@ -99,25 +99,50 @@ function Recorded({ title, children, find }: { title: string; children: React.Re
   );
 }
 
-const translateYes = { translate: "yes" };
-
 // ProseMirror on its own, outside React, so nothing re-renders it.
-function RawProseMirror({ attributes = {} }: { attributes?: Record<string, string> }) {
+function RawProseMirror({
+  attributes = {},
+  quietClass = false,
+  startText = "",
+}: {
+  attributes?: Record<string, string>;
+  quietClass?: boolean;
+  startText?: string;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
+    const doc = startText
+      ? schema.node("doc", null, [schema.node("paragraph", null, [schema.text(startText)])])
+      : undefined;
+    const state = EditorState.create({ schema, doc });
     const view = new EditorView(ref.current, {
-      state: EditorState.create({ schema }),
+      state: doc ? state.apply(state.tr.setSelection(Selection.atEnd(state.doc))) : state,
       attributes: { class: box, ...attributes },
     });
+    if (quietClass) {
+      // ProseMirror calls classList.remove() on every update, which rewrites
+      // the class attribute even when nothing changes. Skip those no-ops.
+      const cl = view.dom.classList;
+      const add = cl.add.bind(cl);
+      const remove = cl.remove.bind(cl);
+      cl.add = (...t: string[]) => {
+        const missing = t.filter((c) => !cl.contains(c));
+        if (missing.length) add(...missing);
+      };
+      cl.remove = (...t: string[]) => {
+        const present = t.filter((c) => cl.contains(c));
+        if (present.length) remove(...present);
+      };
+    }
     return () => view.destroy();
-  }, [attributes]);
+  }, [attributes, quietClass, startText]);
   return <div ref={ref} />;
 }
 
 export function EditorTest() {
   return (
     <div className="max-w-2xl mx-auto p-4 space-y-8">
-      <p className="text-sm">In each box, type &quot;hello.how&quot; once and note whether the space appears. Then tap Copy log under P and paste it in the chat.</p>
+      <p className="text-sm">Type &quot;hello.how&quot; in C, Q, S and QS (in S and QS, tap at the end of &quot;Hi&quot; first). Note which add the space, and copy the logs for any that do.</p>
       <Recorded title="P. Plain editable box" find={(w) => w.querySelector("[contenteditable]")}>
         <div contentEditable suppressContentEditableWarning className={box} style={{ whiteSpace: "break-spaces" }} />
       </Recorded>
@@ -129,11 +154,23 @@ export function EditorTest() {
       <Recorded title="R. Editor library without React" find={(w) => w.querySelector(".ProseMirror")}>
         <RawProseMirror />
       </Recorded>
-      <Recorded title="T. Plain box with translate=no" find={(w) => w.querySelector("[contenteditable]")}>
-        <div contentEditable suppressContentEditableWarning translate="no" className={box} style={{ whiteSpace: "break-spaces" }} />
+      <Recorded title="C. Plain box, class rewritten on every keystroke" find={(w) => w.querySelector("[contenteditable]")}>
+        <div
+          contentEditable
+          suppressContentEditableWarning
+          className={box}
+          style={{ whiteSpace: "break-spaces" }}
+          onInput={(e) => e.currentTarget.classList.remove("not-there")}
+        />
       </Recorded>
-      <Recorded title="Y. Editor library with translate=yes" find={(w) => w.querySelector(".ProseMirror")}>
-        <RawProseMirror attributes={translateYes} />
+      <Recorded title="Q. Editor library, no class rewrites" find={(w) => w.querySelector(".ProseMirror")}>
+        <RawProseMirror quietClass />
+      </Recorded>
+      <Recorded title="S. Editor library, starting with text" find={(w) => w.querySelector(".ProseMirror")}>
+        <RawProseMirror startText="Hi " />
+      </Recorded>
+      <Recorded title="QS. Both" find={(w) => w.querySelector(".ProseMirror")}>
+        <RawProseMirror quietClass startText="Hi " />
       </Recorded>
     </div>
   );
