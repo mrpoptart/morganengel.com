@@ -96,8 +96,6 @@ function Recorded({ title, children, find }: { title: string; children: React.Re
   );
 }
 
-const emptyParagraph = { __html: "<p><br></p>" };
-
 // The styles TipTap injects for every editor, so the copies match it exactly.
 const editorCss = `.ProseMirror { position: relative; word-wrap: break-word; white-space: pre-wrap; white-space: break-spaces; -webkit-font-variant-ligatures: none; font-variant-ligatures: none; font-feature-settings: "liga" 0; }`;
 
@@ -145,21 +143,24 @@ export function EditorTest() {
   return (
     <div className="max-w-2xl mx-auto p-4 space-y-8">
       <style>{editorCss}</style>
-      <p className="text-sm">Type &quot;hello.how&quot; in each box and note which ones add the space. No need to copy logs unless something surprises you.</p>
-      <Recorded title="P. Plain editable box" find={(w) => w.querySelector("[contenteditable]")}>
+      <p className="text-sm">Some boxes start with &quot;Hi&quot; already in them. In those, tap right after &quot;Hi&quot; and type &quot;.how&quot;. In the empty ones, type &quot;hello.how&quot;. Note which ones add the space.</p>
+      <Recorded title="P. Plain editable box (empty)" find={(w) => w.querySelector("[contenteditable]")}>
         <div contentEditable suppressContentEditableWarning className={box} style={{ whiteSpace: "break-spaces" }} />
       </Recorded>
-      <Recorded title="P2. Plain box with a paragraph inside" find={(w) => w.querySelector("[contenteditable]")}>
-        <div contentEditable suppressContentEditableWarning className={box} style={{ whiteSpace: "break-spaces" }} dangerouslySetInnerHTML={emptyParagraph} />
+      <Recorded title="A. Plain box starting with Hi" find={(w) => w.querySelector("[contenteditable]")}>
+        <div contentEditable suppressContentEditableWarning className={box} style={{ whiteSpace: "break-spaces" }} dangerouslySetInnerHTML={{ __html: "Hi" }} />
       </Recorded>
-      <Recorded title="P3. Plain box with the editor's styles" find={(w) => w.querySelector("[contenteditable]")}>
-        <div contentEditable suppressContentEditableWarning className={`ProseMirror ${box}`} />
+      <Recorded title="B. Plain box starting with Hi inside a paragraph" find={(w) => w.querySelector("[contenteditable]")}>
+        <div contentEditable suppressContentEditableWarning className={box} style={{ whiteSpace: "break-spaces" }} dangerouslySetInnerHTML={{ __html: "<p>Hi</p>" }} />
       </Recorded>
-      <Recorded title="P5. Exact copy of the editor's box, no code" find={(w) => w.querySelector("[contenteditable]")}>
-        <div contentEditable suppressContentEditableWarning translate="no" className={`ProseMirror ${box}`} dangerouslySetInnerHTML={emptyParagraph} />
+      <Recorded title="C. Plain box holding only a line break (empty)" find={(w) => w.querySelector("[contenteditable]")}>
+        <div contentEditable suppressContentEditableWarning className={box} style={{ whiteSpace: "break-spaces" }} dangerouslySetInnerHTML={{ __html: "<br>" }} />
       </Recorded>
-      <Recorded title="E. Editor library" find={(w) => w.querySelector(".ProseMirror[translate]")}>
-        <RawProseMirror />
+      <Recorded title="F. Copy of Facebook's post box (empty)" find={(w) => w.querySelector("[contenteditable]")}>
+        <div contentEditable suppressContentEditableWarning role="textbox" spellCheck tabIndex={0} data-lexical-editor="true" className={box} style={{ userSelect: "text", whiteSpace: "pre-wrap", wordBreak: "break-word" }} dangerouslySetInnerHTML={{ __html: '<p dir="auto"><br></p>' }} />
+      </Recorded>
+      <Recorded title="E. Editor library starting with Hi" find={(w) => w.querySelector(".ProseMirror[translate]")}>
+        <RawProseMirror startText="Hi" />
       </Recorded>
     </div>
   );
